@@ -1,0 +1,14 @@
+{
+  "name": "LEGO QUEST",
+  "short_name": "LEGO QUEST",
+  "description": "Digital GM Toolkit for LEGO QUEST tabletop RPG",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#1a1a2e",
+  "theme_color": "#e94560",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
