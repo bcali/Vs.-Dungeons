@@ -14,14 +14,13 @@ export default function CombatTrackerPage() {
     status, encounterName, roundNumber, participants, initiativeOrder,
     currentTurnIndex, actionLog,
     advanceTurn, applyDamage, applyHealing, applyStatusEffect,
-    removeEffect, tickParticipantEffects, regenResource, addLogEntry,
-    endCombat, resetCombat,
+    removeEffect, tickParticipantEffects, regenResource, setResource,
+    setDefending, addLogEntry, endCombat, resetCombat,
   } = useCombatStore();
 
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [transcript, setTranscript] = useState("");
   const [typedInput, setTypedInput] = useState("");
-  const [showTypeInput, setShowTypeInput] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [lastNarration, setLastNarration] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,6 +63,21 @@ export default function CombatTrackerPage() {
           for (const effectId of result.removedEffects) {
             removeEffect(result.participantId, effectId);
           }
+          // Bug fix: apply resource cost / drain
+          if (result.resourceChange !== 0) {
+            const rp = participants.find((pp) => pp.id === result.participantId);
+            if (rp) setResource(result.participantId, (rp.currentResource ?? 0) + result.resourceChange);
+          }
+        }
+
+        // Bug fix: apply rage generated for knights on melee hits
+        if (data.rageGenerated && currentActor?.resourceType === 'rage') {
+          setResource(currentActorId, (currentActor.currentResource ?? 0) + data.rageGenerated);
+        }
+
+        // Bug fix: set defending flag when action is defend
+        if (data.action.type === 'defend') {
+          setDefending(data.action.actorId, true);
         }
 
         // Add log entry
@@ -95,9 +109,11 @@ export default function CombatTrackerPage() {
         // Auto-advance turn
         if (data.turnComplete) {
           setTimeout(() => {
-            // Tick effects and regen for next participant
+            // Clear defending from current actor and prep next participant
+            setDefending(currentActorId, false);
             const nextIdx = (currentTurnIndex + 1) % initiativeOrder.length;
             const nextId = initiativeOrder[nextIdx];
+            setDefending(nextId, false);
             tickParticipantEffects(nextId);
             regenResource(nextId);
             advanceTurn();
@@ -116,12 +132,11 @@ export default function CombatTrackerPage() {
     setTranscript("");
     setTypedInput("");
   }, [processing, roundNumber, participants, initiativeOrder, currentTurnIndex, currentActor,
-      applyDamage, applyHealing, applyStatusEffect, removeEffect, addLogEntry,
-      tickParticipantEffects, regenResource, advanceTurn]);
+      currentActorId, applyDamage, applyHealing, applyStatusEffect, removeEffect, addLogEntry,
+      setResource, setDefending, tickParticipantEffects, regenResource, advanceTurn]);
 
   const startListening = () => {
     if (!isSpeechRecognitionSupported()) {
-      setShowTypeInput(true);
       return;
     }
     stopNarration();
@@ -207,6 +222,17 @@ export default function CombatTrackerPage() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-zinc-400">Round {roundNumber}</span>
+          <button onClick={() => {
+            setDefending(currentActorId, false);
+            const nextIdx = (currentTurnIndex + 1) % initiativeOrder.length;
+            const nextId = initiativeOrder[nextIdx];
+            setDefending(nextId, false);
+            tickParticipantEffects(nextId);
+            regenResource(nextId);
+            advanceTurn();
+          }} className="rounded-lg bg-[#0f3460] px-3 py-1 text-xs text-zinc-400 hover:text-white transition-colors">
+            Skip Turn
+          </button>
           <button onClick={endCombat} className="rounded-lg bg-[#0f3460] px-3 py-1 text-xs text-zinc-400 hover:text-white transition-colors">
             End Combat
           </button>
@@ -350,18 +376,14 @@ export default function CombatTrackerPage() {
           {voiceState === 'error' && (
             <p className="text-sm text-red-400">Error. Try again or type instead.</p>
           )}
-          {voiceState === 'idle' && !showTypeInput && (
-            <p className="text-sm text-zinc-500">Tap mic to speak an action, or type below</p>
-          )}
-          {showTypeInput && (
+          {voiceState === 'idle' && (
             <form onSubmit={(e) => { e.preventDefault(); handleTypedSubmit(); }} className="flex gap-2">
               <input
                 type="text"
                 value={typedInput}
                 onChange={(e) => setTypedInput(e.target.value)}
-                placeholder="Type an action (e.g., 'Knight attacks Goblin 1')"
+                placeholder={`${currentActor?.displayName ?? 'Actor'}'s turn — tap mic or type an action`}
                 className="flex-1 rounded-lg bg-[#0f3460] px-3 py-2 text-sm text-white placeholder-zinc-500"
-                autoFocus
               />
               <button type="submit" disabled={!typedInput.trim() || processing}
                 className="rounded-lg bg-[#e94560] px-4 py-2 text-sm font-bold hover:bg-[#e94560]/80 disabled:opacity-40">
@@ -370,13 +392,6 @@ export default function CombatTrackerPage() {
             </form>
           )}
         </div>
-
-        <button
-          onClick={() => setShowTypeInput(!showTypeInput)}
-          className="rounded-lg bg-[#0f3460] px-3 py-2 text-xs text-zinc-400 hover:text-white"
-        >
-          {showTypeInput ? 'Mic' : 'Type'}
-        </button>
       </div>
     </div>
   );

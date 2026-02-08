@@ -26,6 +26,7 @@ interface CombatState {
   tickParticipantEffects: (participantId: string) => void;
   regenResource: (participantId: string) => void;
   setResource: (participantId: string, amount: number) => void;
+  setDefending: (participantId: string, defending: boolean) => void;
   addLogEntry: (entry: Omit<ActionLogEntry, 'id' | 'timestamp'>) => void;
   getParticipant: (id: string) => CombatParticipant | undefined;
   endCombat: () => void;
@@ -139,6 +140,15 @@ export const useCombatStore = create<CombatState>((set, get) => ({
       participants: state.participants.map(p => {
         if (p.id !== participantId) return p;
         return { ...p, currentResource: Math.max(0, Math.min(amount, p.maxResource ?? 100)) };
+      }),
+    }));
+  },
+
+  setDefending: (participantId, defending) => {
+    set(state => ({
+      participants: state.participants.map(p => {
+        if (p.id !== participantId) return p;
+        return { ...p, isDefending: defending };
       }),
     }));
   },
