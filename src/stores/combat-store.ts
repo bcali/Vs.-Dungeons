@@ -1,10 +1,14 @@
 // Zustand store for active combat state
+// Includes localStorage persistence for crash recovery and auto-save to Supabase
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CombatParticipant, ActiveStatusEffect, ActionLogEntry, CombatStatus } from '@/types/combat';
 import { tickEffects, applyEffect, removeEffect as removeEffectFromList } from '@/lib/game/status-effects';
 import { applyDamage, applyHealing as healHp, isKnockedOut } from '@/lib/game/combat';
 import { applyRegen } from '@/lib/game/resources';
+import { saveQueue } from '@/lib/utils/save-queue';
+import { getSupabase } from '@/lib/supabase/client';
 
 interface CombatState {
   combatId: string | null;
@@ -31,147 +35,14 @@ interface CombatState {
   getParticipant: (id: string) => CombatParticipant | undefined;
   endCombat: () => void;
   resetCombat: () => void;
+  persistCombatSnapshot: () => void;
+  checkForActiveCombat: () => Promise<boolean>;
+  resumeCombat: () => boolean;
 }
 
-export const useCombatStore = create<CombatState>((set, get) => ({
-  combatId: null,
-  encounterName: '',
-  status: 'setup',
-  roundNumber: 1,
-  participants: [],
-  initiativeOrder: [],
-  currentTurnIndex: 0,
-  actionLog: [],
-
-  initCombat: (encounterName, participants, initiativeOrder) => {
-    set({
-      combatId: crypto.randomUUID(),
-      encounterName,
-      status: 'active',
-      roundNumber: 1,
-      participants,
-      initiativeOrder,
-      currentTurnIndex: 0,
-      actionLog: [],
-    });
-  },
-
-  advanceTurn: () => {
-    const { currentTurnIndex, initiativeOrder, roundNumber } = get();
-    const nextIndex = currentTurnIndex + 1;
-
-    if (nextIndex >= initiativeOrder.length) {
-      set({ currentTurnIndex: 0, roundNumber: roundNumber + 1 });
-    } else {
-      set({ currentTurnIndex: nextIndex });
-    }
-  },
-
-  applyDamage: (targetId, amount) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== targetId) return p;
-        const newHp = applyDamage(p.currentHp, amount);
-        return { ...p, currentHp: newHp, isActive: !isKnockedOut(newHp) };
-      }),
-    }));
-  },
-
-  applyHealing: (targetId, amount) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== targetId) return p;
-        const newHp = healHp(p.currentHp, amount, p.maxHp);
-        return { ...p, currentHp: newHp, isActive: newHp > 0 };
-      }),
-    }));
-  },
-
-  applyStatusEffect: (targetId, effect) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== targetId) return p;
-        return { ...p, statusEffects: applyEffect(p.statusEffects, effect) };
-      }),
-    }));
-  },
-
-  removeEffect: (targetId, effectId) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== targetId) return p;
-        return { ...p, statusEffects: removeEffectFromList(p.statusEffects, effectId) };
-      }),
-    }));
-  },
-
-  tickParticipantEffects: (participantId) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== participantId) return p;
-        const result = tickEffects(p.statusEffects);
-        let hp = p.currentHp;
-        if (result.dotDamage > 0) hp = applyDamage(hp, result.dotDamage);
-        if (result.hotHealing > 0) hp = healHp(hp, result.hotHealing, p.maxHp);
-        return {
-          ...p,
-          currentHp: hp,
-          isActive: !isKnockedOut(hp),
-          statusEffects: result.updated,
-        };
-      }),
-    }));
-  },
-
-  regenResource: (participantId) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== participantId || !p.resourceType || !p.maxResource) return p;
-        return {
-          ...p,
-          currentResource: applyRegen(p.currentResource, p.maxResource, p.resourceType),
-        };
-      }),
-    }));
-  },
-
-  setResource: (participantId, amount) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== participantId) return p;
-        return { ...p, currentResource: Math.max(0, Math.min(amount, p.maxResource ?? 100)) };
-      }),
-    }));
-  },
-
-  setDefending: (participantId, defending) => {
-    set(state => ({
-      participants: state.participants.map(p => {
-        if (p.id !== participantId) return p;
-        return { ...p, isDefending: defending };
-      }),
-    }));
-  },
-
-  addLogEntry: (entry) => {
-    const newEntry: ActionLogEntry = {
-      ...entry,
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-    };
-    set(state => ({ actionLog: [newEntry, ...state.actionLog] }));
-  },
-
-  getParticipant: (id) => {
-    return get().participants.find(p => p.id === id);
-  },
-
-  endCombat: () => {
-    set({ status: 'completed' });
-  },
-
-  resetCombat: () => {
-    set({
+export const useCombatStore = create<CombatState>()(
+  persist(
+    (set, get) => ({
       combatId: null,
       encounterName: '',
       status: 'setup',
@@ -180,6 +51,223 @@ export const useCombatStore = create<CombatState>((set, get) => ({
       initiativeOrder: [],
       currentTurnIndex: 0,
       actionLog: [],
-    });
-  },
-}));
+
+      initCombat: (encounterName, participants, initiativeOrder) => {
+        set({
+          combatId: crypto.randomUUID(),
+          encounterName,
+          status: 'active',
+          roundNumber: 1,
+          participants,
+          initiativeOrder,
+          currentTurnIndex: 0,
+          actionLog: [],
+        });
+      },
+
+      advanceTurn: () => {
+        const { currentTurnIndex, initiativeOrder, roundNumber } = get();
+        const nextIndex = currentTurnIndex + 1;
+
+        if (nextIndex >= initiativeOrder.length) {
+          set({ currentTurnIndex: 0, roundNumber: roundNumber + 1 });
+        } else {
+          set({ currentTurnIndex: nextIndex });
+        }
+      },
+
+      applyDamage: (targetId, amount) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== targetId) return p;
+            const newHp = applyDamage(p.currentHp, amount);
+            return { ...p, currentHp: newHp, isActive: !isKnockedOut(newHp) };
+          }),
+        }));
+      },
+
+      applyHealing: (targetId, amount) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== targetId) return p;
+            const newHp = healHp(p.currentHp, amount, p.maxHp);
+            return { ...p, currentHp: newHp, isActive: newHp > 0 };
+          }),
+        }));
+      },
+
+      applyStatusEffect: (targetId, effect) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== targetId) return p;
+            return { ...p, statusEffects: applyEffect(p.statusEffects, effect) };
+          }),
+        }));
+      },
+
+      removeEffect: (targetId, effectId) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== targetId) return p;
+            return { ...p, statusEffects: removeEffectFromList(p.statusEffects, effectId) };
+          }),
+        }));
+      },
+
+      tickParticipantEffects: (participantId) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            const result = tickEffects(p.statusEffects);
+            let hp = p.currentHp;
+            if (result.dotDamage > 0) hp = applyDamage(hp, result.dotDamage);
+            if (result.hotHealing > 0) hp = healHp(hp, result.hotHealing, p.maxHp);
+            return {
+              ...p,
+              currentHp: hp,
+              isActive: !isKnockedOut(hp),
+              statusEffects: result.updated,
+            };
+          }),
+        }));
+      },
+
+      regenResource: (participantId) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId || !p.resourceType || !p.maxResource) return p;
+            return {
+              ...p,
+              currentResource: applyRegen(p.currentResource, p.maxResource, p.resourceType),
+            };
+          }),
+        }));
+      },
+
+      setResource: (participantId, amount) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            return { ...p, currentResource: Math.max(0, Math.min(amount, p.maxResource ?? 100)) };
+          }),
+        }));
+      },
+
+      setDefending: (participantId, defending) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            return { ...p, isDefending: defending };
+          }),
+        }));
+      },
+
+      addLogEntry: (entry) => {
+        const newEntry: ActionLogEntry = {
+          ...entry,
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+        };
+        set(state => ({ actionLog: [newEntry, ...state.actionLog] }));
+      },
+
+      getParticipant: (id) => {
+        return get().participants.find(p => p.id === id);
+      },
+
+      endCombat: () => {
+        set({ status: 'completed' });
+        // Write final hero HP/resources back to characters table
+        get().persistCombatSnapshot();
+      },
+
+      resetCombat: () => {
+        set({
+          combatId: null,
+          encounterName: '',
+          status: 'setup',
+          roundNumber: 1,
+          participants: [],
+          initiativeOrder: [],
+          currentTurnIndex: 0,
+          actionLog: [],
+        });
+      },
+
+      /** Save hero HP/resources to Supabase after each action */
+      persistCombatSnapshot: () => {
+        const { combatId, participants, status, roundNumber } = get();
+        if (!combatId) return;
+
+        const heroes = participants.filter(p => p.team === 'hero' && p.characterId);
+
+        // Update each hero's current HP + resource in the characters table
+        for (const hero of heroes) {
+          saveQueue.save(`hero-hp-${hero.characterId}`, async () => {
+            const supabase = getSupabase();
+            const { error } = await supabase
+              .from('characters')
+              .update({
+                current_hp: hero.currentHp,
+                current_resource: hero.currentResource,
+              })
+              .eq('id', hero.characterId!);
+            if (error) throw error;
+          });
+        }
+
+        // Update combat record metadata
+        saveQueue.save(`combat-meta-${combatId}`, async () => {
+          const supabase = getSupabase();
+          const { error } = await supabase
+            .from('combats')
+            .update({
+              status,
+              round_number: roundNumber,
+            })
+            .eq('id', combatId);
+          if (error) throw error;
+        });
+      },
+
+      /** Check Supabase for any active combat (e.g. after tab crash) */
+      checkForActiveCombat: async () => {
+        try {
+          const supabase = getSupabase();
+          const { data } = await supabase
+            .from('combats')
+            .select('id')
+            .eq('status', 'active')
+            .limit(1)
+            .single();
+          return !!data;
+        } catch {
+          return false;
+        }
+      },
+
+      /** Try restoring combat state from localStorage (hydrated by persist middleware) */
+      resumeCombat: () => {
+        const { combatId, status, participants } = get();
+        if (combatId && status === 'active' && participants.length > 0) {
+          return true;
+        }
+        return false;
+      },
+    }),
+    {
+      name: 'lego-quest-combat',
+      // Only persist the data fields, not functions
+      partialize: (state) => ({
+        combatId: state.combatId,
+        encounterName: state.encounterName,
+        status: state.status,
+        roundNumber: state.roundNumber,
+        participants: state.participants,
+        initiativeOrder: state.initiativeOrder,
+        currentTurnIndex: state.currentTurnIndex,
+        actionLog: state.actionLog,
+      }),
+    }
+  )
+);
