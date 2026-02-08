@@ -25,7 +25,7 @@
 | Tier 1 | 0 points |
 | Tier 2 | 3 points |
 | Tier 3 | 6 points |
-| Tier 4 | 10 points |
+| Tier 4 | 10 | Update spellbook.md with skill/spell interaction rules | `spellbook.md` (synergy section) | ✅ Complete |
 | Tier 5 (Capstone) | 15 points |
 
 ---
@@ -49,10 +49,10 @@
 
 | # | Task | File | Status |
 |---|------|------|--------|
-| 9 | Add skill point progression rules | `game-rules/core-rules.md` | ⬜ Not started |
-| 10 | Add integration notes (extends spellbook) | `game-rules/spellbook.md` | ⬜ Not started |
-| 11 | Add skill tree tracking to character sheets | `game-rules/character-sheets.md` | ⬜ Not started |
-| 12 | Add skill tree GM guidance | `game-rules/game-master-prompt.md` | ⬜ Not started |
+| 9 | Update core-rules.md with skill tree mechanics | `core-rules.md` (section 8) | ✅ Complete |
+| 10 | Update spellbook.md with skill/spell interaction rules | `spellbook.md` (synergy section) | ✅ Complete |
+| 11 | Update character-sheets.md with skill tree UI | `character-sheets.md` (both heroes) | ✅ Complete |
+| 12 | Update game-master-prompt.md with skill tree guidance | `game-master-prompt.md` (new section) | ✅ Complete |
 
 ### Phase 3 — Codebase / Docs Updates
 

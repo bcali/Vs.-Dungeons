@@ -21,12 +21,10 @@
 
 | Stat | Base | Bonus | Gear Bonus | Total |
 |------|------|-------|------------|-------|
-| **CON** (Constitution) | 3 | +0 | — | 3 |
-| **STR** (Strength) | 3 | +0 | — | 3 |
-| **AGI** (Agility) | 3 | +0 | — | 3 |
-| **MNA** (Mana) | 3 | +0 | — | 3 |
-| **INT** (Intelligence) | 3 | +0 | — | 3 |
-| **LCK** (Luck) | 3 | +0 | — | 3 |
+| **STRENGTH** | 3 | +0 | — | 3 |
+| **SPEED** | 3 | +0 | — | 3 |
+| **TOUGHNESS** | 3 | +0 | — | 3 |
+| **SMARTS** | 3 | +0 | — | 3 |
 
 > ⚡ Level 1 bonus: +1 to any stat (not yet assigned)
 
@@ -34,31 +32,18 @@
 
 | Field | Value |
 |-------|-------|
-| **HP** | 9 / 9 (CON × 3) |
-| **Resource** | *TBD* / *TBD* (depends on profession) |
-| **Resource Type** | *TBD* (Rage / Energy / Mana) |
+| **HP** | 9 / 9 |
+| **Spell Slots** | 0 / 0 |
 | **Movement** | 6 studs |
 | **Melee Damage** | STR (3) |
-| **Melee Target** | Enemy STR + 8 |
-| **Ranged Target** | Enemy AGI + 8 |
-| **Crit Range** | 20 (LCK 5+ = 19–20, LCK 8+ = 18–20) |
-| **Lucky Saves** | 1 / session |
 
-### Resource Details
-
-| Profession | Resource | Max Pool | Regen |
-|-----------|----------|----------|-------|
-| Knight | Rage | 100 | +15 per hit taken, +10 per melee hit, etc. |
-| Rogue | Energy | 100 | +20 per turn |
-| Wizard / Healer / Ranger / Inventor | Mana | MNA × 15 | +20 per turn |
-
-### Abilities Known
+### Spells Known
 
 *None yet — unlocks at Level 2*
 
-| Ability | Tier | Cost | Resource | Notes |
-|---------|------|------|----------|-------|
-| — | — | — | — | — |
+| Spell | Tier | Slot Cost | Notes |
+|-------|------|-----------|-------|
+| — | — | — | — |
 
 ### Inventory
 
@@ -83,6 +68,46 @@
 | 12 | *TBD* | 🔒 Locked |
 | 15 | *TBD* | 🔒 Locked |
 | 20 | *TBD* | 🔒 Locked |
+
+
+### Skill Tree
+
+| Field | Value |
+|-------|-------|
+| **Total Skill Points** | 1 |
+| **Points Spent** | 0 |
+| **Points Available** | 1 |
+
+#### Branch Investment
+
+| Branch | Points Spent | Highest Tier Unlocked |
+|--------|-------------|----------------------|
+| *Branch 1 TBD* | 0 | Tier 1 |
+| *Branch 2 TBD* | 0 | Tier 1 |
+| Core | 0 | — |
+
+#### Learned Skills
+
+| Skill | Branch | Tier | Type | Rank | Max Rank |
+|-------|--------|------|------|------|----------|
+| *None yet* | — | — | — | — | — |
+
+#### Active Passives
+
+*Passive skills always in effect (no action bar slot needed):*
+
+| Passive | Effect | Rank |
+|---------|--------|------|
+| *None yet* | — | — |
+
+### Action Bar (5 Slots)
+
+| Slot 1 | Slot 2 | Slot 3 | Slot 4 | Slot 5 |
+|--------|--------|--------|--------|--------|
+| *empty* | *empty* | *empty* | *empty* | *empty* |
+
+> Mix and match skill tree abilities (free) and spellbook spells (cost slots). Normal attacks are always available.
+
 
 ### Crafted Items
 
@@ -113,12 +138,10 @@
 
 | Stat | Base | Bonus | Gear Bonus | Total |
 |------|------|-------|------------|-------|
-| **CON** (Constitution) | 3 | +0 | — | 3 |
-| **STR** (Strength) | 3 | +0 | — | 3 |
-| **AGI** (Agility) | 3 | +0 | — | 3 |
-| **MNA** (Mana) | 3 | +0 | — | 3 |
-| **INT** (Intelligence) | 3 | +0 | — | 3 |
-| **LCK** (Luck) | 3 | +0 | — | 3 |
+| **STRENGTH** | 3 | +0 | — | 3 |
+| **SPEED** | 3 | +0 | — | 3 |
+| **TOUGHNESS** | 3 | +0 | — | 3 |
+| **SMARTS** | 3 | +0 | — | 3 |
 
 > ⚡ Level 1 bonus: +1 to any stat (not yet assigned)
 
@@ -126,31 +149,18 @@
 
 | Field | Value |
 |-------|-------|
-| **HP** | 9 / 9 (CON × 3) |
-| **Resource** | *TBD* / *TBD* (depends on profession) |
-| **Resource Type** | *TBD* (Rage / Energy / Mana) |
+| **HP** | 9 / 9 |
+| **Spell Slots** | 0 / 0 |
 | **Movement** | 6 studs |
 | **Melee Damage** | STR (3) |
-| **Melee Target** | Enemy STR + 8 |
-| **Ranged Target** | Enemy AGI + 8 |
-| **Crit Range** | 20 (LCK 5+ = 19–20, LCK 8+ = 18–20) |
-| **Lucky Saves** | 1 / session |
 
-### Resource Details
-
-| Profession | Resource | Max Pool | Regen |
-|-----------|----------|----------|-------|
-| Knight | Rage | 100 | +15 per hit taken, +10 per melee hit, etc. |
-| Rogue | Energy | 100 | +20 per turn |
-| Wizard / Healer / Ranger / Inventor | Mana | MNA × 15 | +20 per turn |
-
-### Abilities Known
+### Spells Known
 
 *None yet — unlocks at Level 2*
 
-| Ability | Tier | Cost | Resource | Notes |
-|---------|------|------|----------|-------|
-| — | — | — | — | — |
+| Spell | Tier | Slot Cost | Notes |
+|-------|------|-----------|-------|
+| — | — | — | — |
 
 ### Inventory
 
@@ -175,6 +185,45 @@
 | 12 | *TBD* | 🔒 Locked |
 | 15 | *TBD* | 🔒 Locked |
 | 20 | *TBD* | 🔒 Locked |
+
+
+### Skill Tree
+
+| Field | Value |
+|-------|-------|
+| **Total Skill Points** | 1 |
+| **Points Spent** | 0 |
+| **Points Available** | 1 |
+
+#### Branch Investment
+
+| Branch | Points Spent | Highest Tier Unlocked |
+|--------|-------------|----------------------|
+| *Branch 1 TBD* | 0 | Tier 1 |
+| *Branch 2 TBD* | 0 | Tier 1 |
+| Core | 0 | — |
+
+#### Learned Skills
+
+| Skill | Branch | Tier | Type | Rank | Max Rank |
+|-------|--------|------|------|------|----------|
+| *None yet* | — | — | — | — | — |
+
+#### Active Passives
+
+*Passive skills always in effect (no action bar slot needed):*
+
+| Passive | Effect | Rank |
+|---------|--------|------|
+| *None yet* | — | — |
+
+### Action Bar (5 Slots)
+
+| Slot 1 | Slot 2 | Slot 3 | Slot 4 | Slot 5 |
+|--------|--------|--------|--------|--------|
+| *empty* | *empty* | *empty* | *empty* | *empty* |
+
+> Mix and match skill tree abilities (free) and spellbook spells (cost slots). Normal attacks are always available.
 
 ### Crafted Items
 
