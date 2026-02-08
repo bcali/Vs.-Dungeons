@@ -58,16 +58,16 @@
 
 | # | Task | File | Status |
 |---|------|------|--------|
-| 13 | Supabase migration for skill tree tables | `supabase/migrations/004_skill_trees.sql` | ⬜ Not started |
-| 14 | UI component spec for skill tree in character sheet | `docs/SKILL-TREES-SPEC.md` | ⬜ Not started |
-| 15 | Condensed rules for Claude API context window | `docs/GAME-RULES-REFERENCE.md` (additions) | ⬜ Not started |
+| 13 | Supabase migration for skill tree tables | `004_skill_trees.sql` | ✅ Complete |
+| 14 | UI component spec for skill tree in character sheet | `SKILL-TREES-UI-SPEC.md` | ✅ Complete |
+| 15 | Condensed rules for Claude API context window | `SKILL-TREES-API-RULES.md` | ✅ Complete |
 
 ### Phase 4 — Seed Data
 
 | # | Task | File | Status |
 |---|------|------|--------|
-| 16 | All Warrior skills as DB seed data | `supabase/seed/skill_trees_warrior.sql` | ⬜ Not started |
-| 17 | All Rogue/Ranger skills as DB seed data | `supabase/seed/skill_trees_rogue_ranger.sql` | ⬜ Not started |
+| 16 | All Warrior skills as DB seed data | `skill_trees_warrior_seed.sql` | ✅ Complete |
+| 17 | All Rogue/Ranger skills as DB seed data | `skill_trees_rogue_ranger_seed.sql` + `skill_trees_sample_builds.sql` | ✅ Complete |
 
 ---
 
