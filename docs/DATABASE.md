@@ -14,6 +14,9 @@ campaigns (1) ──── sessions (many)
 characters (2) ─┬── character_abilities (many)
                 ├── character_inventory (many)
                 ├── character_seals (1 per char)
+                ├── character_skill_allocations (many) ──── skill_tree_skills (1)
+                ├── character_action_bar (up to 5) ─┬── skill_tree_skills (0..1)
+                │                                   └── abilities (0..1)
                 └── combat_participants (many) ──── combats (1)
                                                       │
                                                  combat_effects (many)
@@ -23,6 +26,8 @@ monsters (library) ── monster_abilities (many)
 
 abilities (reference library)
 status_effect_definitions (reference library)
+skill_tree_skills (reference library)
+item_catalog (reference library)
 ```
 
 ---
@@ -241,7 +246,8 @@ CREATE TABLE character_inventory (
   effect_json JSONB,  -- stat bonuses, damage, healing, etc.
   -- example: {"stat_bonuses": {"str": 2}, "damage_bonus": 3}
   equipped BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(character_id, item_name)  -- enables inventory stacking via upsert
 );
 ```
 
@@ -289,6 +295,9 @@ CREATE TABLE monsters (
   --   {"name": "Summon Scouts", "trigger": "below_hp_50", "effect": "summon 2 goblin_scout"},
   --   {"name": "Fire Breath", "shape": "cone", "size": 4, "damage": 8}
   -- ]
+
+  -- Rewards
+  xp_reward INTEGER DEFAULT 0,
 
   -- Display
   description TEXT,
@@ -342,11 +351,12 @@ CREATE TABLE combats (
   session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
   campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
   name TEXT,  -- "Forest Path Ambush", "Goblin King Boss Fight"
-  status TEXT DEFAULT 'active' CHECK (status IN ('setup','active','completed','abandoned')),
+  status TEXT DEFAULT 'active' CHECK (status IN ('setup','active','rewards','completed','abandoned')),
   current_turn INTEGER DEFAULT 0,
   current_combatant_id UUID,  -- FK to combat_participants
   initiative_order JSONB,  -- ordered array of participant IDs
   round_number INTEGER DEFAULT 1,
+  rewards_json JSONB,  -- XP and loot awarded after combat
   created_at TIMESTAMPTZ DEFAULT now(),
   completed_at TIMESTAMPTZ
 );
@@ -486,11 +496,271 @@ CREATE TABLE status_effect_definitions (
 );
 ```
 
+### 16. `skill_tree_skills` (Reference Library)
+
+```sql
+CREATE TABLE skill_tree_skills (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  skill_code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  class TEXT NOT NULL CHECK (class IN ('warrior', 'rogue_ranger')),
+  branch TEXT NOT NULL CHECK (branch IN ('protection', 'arms', 'warrior_core', 'shadow', 'precision', 'survival', 'rogue_ranger_core')),
+  tier INTEGER NOT NULL CHECK (tier BETWEEN 1 AND 5),
+  skill_type TEXT NOT NULL CHECK (skill_type IN ('active', 'passive')),
+  max_rank INTEGER NOT NULL CHECK (max_rank BETWEEN 1 AND 3),
+  description TEXT NOT NULL,
+  rank_effects JSONB,
+  lego_tip TEXT,
+  effect_json JSONB,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_skill_tree_class ON skill_tree_skills(class);
+CREATE INDEX idx_skill_tree_branch ON skill_tree_skills(branch);
+```
+
+### 17. `character_skill_allocations`
+
+```sql
+CREATE TABLE character_skill_allocations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+  skill_id UUID NOT NULL REFERENCES skill_tree_skills(id) ON DELETE CASCADE,
+  current_rank INTEGER NOT NULL DEFAULT 1 CHECK (current_rank >= 1),
+  learned_at_level INTEGER,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(character_id, skill_id)
+);
+```
+
+### 18. `character_action_bar`
+
+```sql
+CREATE TABLE character_action_bar (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+  slot_number INTEGER NOT NULL CHECK (slot_number BETWEEN 1 AND 5),
+  skill_id UUID REFERENCES skill_tree_skills(id) ON DELETE SET NULL,
+  ability_id UUID REFERENCES abilities(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(character_id, slot_number),
+  CHECK (
+    (skill_id IS NOT NULL AND ability_id IS NULL) OR
+    (skill_id IS NULL AND ability_id IS NOT NULL) OR
+    (skill_id IS NULL AND ability_id IS NULL)
+  )
+);
+```
+
+### 19. `item_catalog` (Reference Library)
+
+```sql
+CREATE TABLE item_catalog (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  item_type TEXT CHECK (item_type IN ('weapon','armor','consumable','quest','misc')),
+  rarity TEXT CHECK (rarity IN ('common','uncommon','rare','epic','legendary')),
+  description TEXT,
+  effect_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_item_catalog_type ON item_catalog(item_type);
+CREATE INDEX idx_item_catalog_rarity ON item_catalog(rarity);
+```
+
 ---
 
-## Initial Migration: `001_initial_schema.sql`
+## Stored Functions
 
-Combine all table definitions above in dependency order:
+### `increment_xp(character_uuid UUID, amount INTEGER)` -> `INTEGER`
+
+Atomically increments a character's XP, preventing race conditions from concurrent awards. Returns the new XP total.
+
+```sql
+CREATE OR REPLACE FUNCTION increment_xp(character_uuid UUID, amount INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  new_xp INTEGER;
+BEGIN
+  UPDATE characters
+  SET xp = xp + amount
+  WHERE id = character_uuid
+  RETURNING xp INTO new_xp;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Character % not found', character_uuid;
+  END IF;
+
+  RETURN new_xp;
+END;
+$$;
+```
+
+### `allocate_skill_point(p_character_id UUID, p_skill_id UUID)` -> `INTEGER`
+
+Validates and allocates one skill point to a skill tree skill. Checks available points (level - spent), max rank, and tier gating (branch point thresholds: tier 1=0, 2=3, 3=6, 4=10, 5=15). Returns the new rank.
+
+```sql
+CREATE OR REPLACE FUNCTION allocate_skill_point(p_character_id UUID, p_skill_id UUID)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_skill RECORD;
+  v_char_level INTEGER;
+  v_spent INTEGER;
+  v_available INTEGER;
+  v_current_rank INTEGER;
+  v_branch_points INTEGER;
+  v_tier_requirement INTEGER;
+BEGIN
+  -- 1. Look up the skill
+  SELECT * INTO v_skill FROM skill_tree_skills WHERE id = p_skill_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Skill % not found', p_skill_id;
+  END IF;
+
+  -- 2. Get character level
+  SELECT level INTO v_char_level FROM characters WHERE id = p_character_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Character % not found', p_character_id;
+  END IF;
+
+  -- 3. Compute total spent points (sum of current_rank from allocations)
+  SELECT COALESCE(SUM(csa.current_rank), 0)
+    INTO v_spent
+    FROM character_skill_allocations csa
+   WHERE csa.character_id = p_character_id;
+
+  -- 4. Check available points (level - spent >= 1)
+  v_available := v_char_level - v_spent;
+  IF v_available < 1 THEN
+    RAISE EXCEPTION 'No skill points available (level=%, spent=%)', v_char_level, v_spent;
+  END IF;
+
+  -- 5. Check max rank not exceeded
+  SELECT COALESCE(csa.current_rank, 0)
+    INTO v_current_rank
+    FROM character_skill_allocations csa
+   WHERE csa.character_id = p_character_id
+     AND csa.skill_id = p_skill_id;
+
+  IF NOT FOUND THEN
+    v_current_rank := 0;
+  END IF;
+
+  IF v_current_rank >= v_skill.max_rank THEN
+    RAISE EXCEPTION 'Skill % is already at max rank (%)', v_skill.name, v_skill.max_rank;
+  END IF;
+
+  -- 6. For non-core branches, check tier gating
+  IF v_skill.branch NOT IN ('warrior_core', 'rogue_ranger_core') THEN
+    SELECT COALESCE(SUM(csa.current_rank), 0)
+      INTO v_branch_points
+      FROM character_skill_allocations csa
+      JOIN skill_tree_skills sts ON sts.id = csa.skill_id
+     WHERE csa.character_id = p_character_id
+       AND sts.branch = v_skill.branch;
+
+    CASE v_skill.tier
+      WHEN 1 THEN v_tier_requirement := 0;
+      WHEN 2 THEN v_tier_requirement := 3;
+      WHEN 3 THEN v_tier_requirement := 6;
+      WHEN 4 THEN v_tier_requirement := 10;
+      WHEN 5 THEN v_tier_requirement := 15;
+      ELSE v_tier_requirement := 0;
+    END CASE;
+
+    IF v_branch_points < v_tier_requirement THEN
+      RAISE EXCEPTION 'Need % points in % branch for tier % (have %)',
+        v_tier_requirement, v_skill.branch, v_skill.tier, v_branch_points;
+    END IF;
+  END IF;
+
+  -- 7. Upsert into character_skill_allocations
+  INSERT INTO character_skill_allocations (character_id, skill_id, current_rank, learned_at_level)
+  VALUES (p_character_id, p_skill_id, 1, v_char_level)
+  ON CONFLICT (character_id, skill_id)
+  DO UPDATE SET current_rank = character_skill_allocations.current_rank + 1,
+                updated_at = now();
+
+  -- 8. Return the new rank
+  SELECT csa.current_rank INTO v_current_rank
+    FROM character_skill_allocations csa
+   WHERE csa.character_id = p_character_id
+     AND csa.skill_id = p_skill_id;
+
+  RETURN v_current_rank;
+END;
+$$;
+```
+
+### `respec_character(p_character_id UUID)` -> `void`
+
+Removes all skill allocations for a character and clears skill references from the action bar.
+
+```sql
+CREATE OR REPLACE FUNCTION respec_character(p_character_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  DELETE FROM character_skill_allocations WHERE character_id = p_character_id;
+  UPDATE character_action_bar SET skill_id = NULL WHERE character_id = p_character_id AND skill_id IS NOT NULL;
+END;
+$$;
+```
+
+### `add_inventory_item(p_character_id UUID, p_item_name TEXT, p_item_type TEXT, p_quantity INTEGER, p_effect_json JSONB)` -> `UUID`
+
+Upserts an item into a character's inventory with stacking. If the item already exists (by character_id + item_name), the quantity is incremented. Returns the inventory row id.
+
+```sql
+CREATE OR REPLACE FUNCTION add_inventory_item(
+  p_character_id UUID,
+  p_item_name TEXT,
+  p_item_type TEXT DEFAULT 'misc',
+  p_quantity INTEGER DEFAULT 1,
+  p_effect_json JSONB DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result_id UUID;
+BEGIN
+  INSERT INTO character_inventory (character_id, item_name, item_type, quantity, effect_json)
+  VALUES (p_character_id, p_item_name, p_item_type, p_quantity, p_effect_json)
+  ON CONFLICT (character_id, item_name) DO UPDATE
+    SET quantity = character_inventory.quantity + EXCLUDED.quantity
+  RETURNING id INTO result_id;
+  RETURN result_id;
+END;
+$$;
+```
+
+---
+
+## Migrations
+
+All migrations live in `supabase/migrations/` and are applied in order:
+
+1. `001_initial_schema.sql` — All base tables (game_config through status_effect_definitions)
+2. `002_rls_policies.sql` — Hardened RLS policies replacing permissive allow_all
+3. `003_atomic_xp.sql` — `increment_xp()` stored function
+4. `004_skill_trees.sql` — `skill_tree_skills`, `character_skill_allocations`, `character_action_bar` tables + `allocate_skill_point()` and `respec_character()` functions
+5. `005_rewards_system.sql` — `xp_reward` on monsters, `rewards_json` on combats, `item_catalog` table, inventory unique constraint, `add_inventory_item()` function
+
+### `001_initial_schema.sql` — Base tables in dependency order:
 
 1. `game_config`
 2. `campaigns`
@@ -510,7 +780,9 @@ Combine all table definitions above in dependency order:
 
 ---
 
-## Seed Data: `003_seed_data.sql`
+## Seed Data
+
+Seed SQL is embedded in the initial migration and subsequent migrations. Data seeded includes:
 
 ### Default Game Config
 Insert one row with all defaults (matches core-rules.md).
@@ -527,6 +799,9 @@ Seed all abilities from spellbook.md — every profession ability + universal ab
 
 ### Status Effect Definitions
 Seed all standard effects (see STATUS-EFFECTS.md for full list).
+
+### Skill Tree Skills
+Seeded via `004_skill_trees.sql` seed data or application-level inserts — warrior and rogue/ranger skill trees with protection, arms, shadow, precision, survival, and core branches.
 
 ---
 
@@ -600,4 +875,5 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON game_config FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON campaigns FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON characters FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON character_skill_allocations FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 ```

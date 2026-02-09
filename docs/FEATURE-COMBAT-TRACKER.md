@@ -250,13 +250,113 @@ For when voice isn't practical or for quick adjustments:
 
 | Requirement | Detail |
 |------------|--------|
-| Victory screen | Show when all enemies at 0 HP |
+| End Combat button | GM clicks "End Combat" to transition to Rewards phase (F13) before final victory |
+| Victory screen | Show after rewards are applied (all enemies at 0 HP) |
 | Summary | Total damage dealt, abilities used, turns taken |
-| XP calculation | Based on monsters defeated, suggest XP per hero |
+| XP calculation | Handled by Rewards phase (F13); based on monsters defeated |
 | Loot roller integration | Roll loot for each enemy |
 | Save state | Persist final HP/resource state back to characters |
 | Combat log | Full combat saved to Supabase for session history |
 | Return to characters | Update character sheets with new HP, resources, loot, XP |
+
+### F13: Post-Battle Rewards
+
+Triggered when the GM clicks "End Combat". The combat enters the `rewards` status and displays the rewards screen before transitioning to `completed`.
+
+#### Rewards Screen Layout
+
+| Requirement | Detail |
+|------------|--------|
+| Entry point | GM clicks "End Combat" button, combat status transitions to `rewards` via `enterRewardsPhase()` |
+| Screen layout | 12-column grid: left panel (XP summary + item catalog), right panel (hero reward cards) |
+| Header | Shows VICTORY or DEFEAT banner with encounter name |
+
+#### XP Summary (Left Panel)
+
+| Requirement | Detail |
+|------------|--------|
+| Enemies defeated list | Each defeated enemy shown with name, boss indicator, and individual XP reward |
+| Enemies survived list | Enemies still alive listed separately with 0 XP |
+| Total XP | Sum of all defeated enemy XP rewards |
+| XP per hero | Total XP split evenly across hero count (displayed as "X XP each") |
+
+#### Hero Reward Cards (Right Panel)
+
+| Requirement | Detail |
+|------------|--------|
+| One card per hero | Displays hero name, current level, and level-up indicator if XP threshold crossed |
+| XP progress bar | Shows current XP, XP earned, new total, and progress toward next level threshold |
+| Level-up preview | If hero crosses XP threshold, shows "Level X → Level Y!" with pulsing LEVEL UP badge |
+| Gold input | Numeric input field showing current gold; GM enters gold to award per hero |
+| Gold preview | Shows projected total (current + awarded) when gold value entered |
+| Assigned items | List of items assigned to this hero with remove button for each |
+| Active selection | Clicking a hero card selects it as target for item catalog additions |
+
+#### Item Catalog (Left Panel)
+
+| Requirement | Detail |
+|------------|--------|
+| Searchable list | Text search filters items from `item_catalog` Supabase table by name |
+| Type filter | Filter buttons for: All, Weapon, Armor, Consumable, Misc |
+| Item display | Shows item name, rarity (color-coded: common/green, uncommon/blue, rare/yellow, epic/purple, legendary/red), and description |
+| Add to hero | Clicking a catalog item adds it to the currently selected hero |
+| Custom item entry | Text input + type dropdown + "Add" button for items not in the catalog |
+| Custom item types | Weapon, Armor, Consumable, Quest, Misc |
+
+#### Apply Rewards
+
+| Requirement | Detail |
+|------------|--------|
+| "Apply Rewards" button | Single button to persist all rewards; disabled after application |
+| XP persistence | Calls `incrementXp()` for each hero with earned XP |
+| Level-up detection | `checkLevelUp()` compares new XP against level thresholds; updates level, rank, and grants unspent stat points |
+| Gold persistence | Calls `updateCharacter()` to add awarded gold to current balance |
+| Item persistence | Calls `addInventoryItem()` for each assigned item (name, type, quantity, effect JSON) |
+| Rewards history | Calls `saveCombatRewards()` to persist full `BattleRewardsSummary` with allocations per hero |
+| Button states | Default: gold "Apply Rewards" / During: disabled "Applying..." / After: green "Rewards Applied!" |
+
+#### Level-Up Celebration
+
+| Requirement | Detail |
+|------------|--------|
+| Trigger | Shown after rewards are applied if any hero leveled up |
+| Full-screen overlay | Fixed overlay with dark backdrop (80% opacity) and gold particle effects |
+| Hero cards | Each leveled hero shown with: name, level transition (X → Y), new rank title, stat/skill point gains |
+| Auto-dismiss | Overlay auto-dismisses after 5 seconds |
+| Click to dismiss | Clicking anywhere dismisses immediately |
+| Transition | After celebration completes (or is dismissed), calls `endCombat()` to transition to `completed` |
+
+#### Types
+
+```typescript
+interface RewardItem {
+  itemName: string;
+  itemType: ItemType;          // 'weapon' | 'armor' | 'consumable' | 'quest' | 'misc'
+  quantity: number;
+  effectJson?: Record<string, unknown> | null;
+}
+
+interface RewardAllocation {
+  characterId: string;
+  heroName: string;
+  xpEarned: number;
+  goldEarned: number;
+  items: RewardItem[];
+  leveledUp: boolean;
+  previousLevel: number;
+  newLevel: number;
+}
+
+interface BattleRewardsSummary {
+  encounterName: string;
+  enemiesDefeated: { name: string; xpReward: number; isBoss: boolean }[];
+  enemiesSurvived: { name: string }[];
+  totalXp: number;
+  xpPerHero: number;
+  heroCount: number;
+  allocations: RewardAllocation[];
+}
+```
 
 ---
 
@@ -269,7 +369,7 @@ interface CombatState {
   // Combat metadata
   combatId: string;
   encounterName: string;
-  status: 'setup' | 'active' | 'completed' | 'abandoned';
+  status: 'setup' | 'active' | 'rewards' | 'completed' | 'abandoned';
   roundNumber: number;
 
   // Participants
@@ -291,6 +391,7 @@ interface CombatState {
   tickEffects: (participantId: string) => void;
   regenResource: (participantId: string) => void;
   setResource: (participantId: string, amount: number) => void;
+  enterRewardsPhase: () => void;
   endCombat: () => void;
 }
 
@@ -388,6 +489,7 @@ ACTION_RESOLVED
     ├── Add to action log
     ├── Check for KOs
     ├── Check for victory (all enemies at 0 HP)
+    │       └── If GM clicks "End Combat" → REWARDS
     │
     ▼
 END_OF_TURN
@@ -398,6 +500,18 @@ END_OF_TURN
     │
     ▼
 START_OF_TURN (next combatant)
+    ...
+    ▼
+REWARDS
+    │
+    ├── Display XP summary (defeated enemies + XP per hero)
+    ├── GM assigns gold and items per hero
+    ├── GM clicks "Apply Rewards"
+    ├── Persist XP, gold, items, level-ups to Supabase
+    ├── If any hero leveled up → show Level-Up Celebration
+    │
+    ▼
+COMPLETED
 ```
 
 ---

@@ -180,6 +180,7 @@ cd lego-quest
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `ANTHROPIC_API_KEY` | Claude API key |
+| `APP_SECRET_KEY` | API auth key (generate with `openssl rand -hex 32`) |
 
 ### GCP Service Account
 ```bash

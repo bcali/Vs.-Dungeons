@@ -41,7 +41,10 @@ export default function CombatTrackerPage() {
     try {
       const res = await fetch('/api/combat/action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(process.env.NEXT_PUBLIC_APP_KEY && { 'X-App-Key': process.env.NEXT_PUBLIC_APP_KEY }),
+        },
         body: JSON.stringify({
           transcript: text,
           combatState: { roundNumber, participants, initiativeOrder, currentTurnIndex },

@@ -41,7 +41,9 @@ jobs:
             --set-env-vars "\
               NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }},\
               NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }},\
-              ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" \
+              ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }},\
+              APP_SECRET_KEY=${{ secrets.APP_SECRET_KEY }},\
+              NEXT_PUBLIC_APP_KEY=${{ secrets.APP_SECRET_KEY }}" \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
