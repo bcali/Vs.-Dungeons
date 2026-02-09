@@ -1,0 +1,71 @@
+.lego-bg-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: #1a1a1a;
+  perspective: 1000px;
+}
+
+.lego-plate {
+  position: absolute;
+  inset: -20%;
+  background-color: #222;
+  transform: rotateX(20deg) scale(1.2);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 4px;
+  padding: 4px;
+}
+
+.stud {
+  width: 100%;
+  height: 100%;
+  background: #2a2a2a;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 
+    inset 1px 1px 2px rgba(255,255,255,0.1),
+    inset -1px -1px 2px rgba(0,0,0,0.5),
+    2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.stud::before {
+  content: '';
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.1) 100%);
+}
+
+.floating-block {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: var(--color);
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 0 10px rgba(0,0,0,0.2),
+    8px 8px 16px rgba(0,0,0,0.4);
+  animation: float 6s ease-in-out infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.floating-block::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: inherit;
+  filter: brightness(1.1);
+  box-shadow: 
+    inset 2px 2px 4px rgba(255,255,255,0.3),
+    2px 2px 4px rgba(0,0,0,0.2);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--rotation)); }
+  50% { transform: translateY(-20px) rotate(calc(var(--rotation) + 5deg)); }
+}
