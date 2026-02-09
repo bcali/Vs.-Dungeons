@@ -4,8 +4,10 @@ import Link from "next/link";
 import { use, useEffect, useState, useCallback } from "react";
 import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals } from "@/lib/supabase/queries";
 import { maxHp, maxResource, totalStats, statBonus, critRange, xpForLevel, rankForLevel } from "@/lib/game/stats";
-import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO } from "@/types/game";
+import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/types/game";
 import type { Character, Ability, InventoryItem, CharacterSeals, StatKey } from "@/types/game";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SkillTreePanel } from "@/components/character/skill-tree-panel";
 
 export default function CharacterSheetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -183,63 +185,84 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
 
-        <div className="col-span-3 space-y-6">
-          {/* Abilities */}
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-            <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Abilities ({abilities.length})</h2>
-            {abilities.length === 0 ? (
-              <p className="text-zinc-500 text-sm italic">No abilities learned yet</p>
-            ) : (
-              <div className="space-y-2">
-                {abilities.map((ab) => (
-                  <div key={ab.id} className="flex items-start justify-between rounded-lg bg-[#0f3460]/50 px-4 py-3">
-                    <div>
-                      <p className="font-medium text-sm">{ab.name}</p>
-                      <p className="text-xs text-zinc-500 mt-0.5">{ab.description}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-3">
-                      <span className="text-xs text-zinc-400">Tier {ab.tier}</span>
-                      {ab.resourceCost > 0 && <p className="text-xs text-zinc-500">{ab.resourceCost} {ab.resourceType}</p>}
-                    </div>
+        <div className="col-span-3">
+          <Tabs defaultValue="sheet">
+            <TabsList className="bg-[#16213e] border border-[#0f3460] mb-4">
+              <TabsTrigger value="sheet" className="data-[state=active]:bg-[#0f3460] data-[state=active]:text-[#e5a91a]">
+                Sheet
+              </TabsTrigger>
+              {char.profession && PROFESSION_CLASS[char.profession] && (
+                <TabsTrigger value="skills" className="data-[state=active]:bg-[#0f3460] data-[state=active]:text-[#e5a91a]">
+                  Skills
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            <TabsContent value="sheet" className="space-y-6">
+              {/* Abilities */}
+              <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
+                <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Abilities ({abilities.length})</h2>
+                {abilities.length === 0 ? (
+                  <p className="text-zinc-500 text-sm italic">No abilities learned yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {abilities.map((ab) => (
+                      <div key={ab.id} className="flex items-start justify-between rounded-lg bg-[#0f3460]/50 px-4 py-3">
+                        <div>
+                          <p className="font-medium text-sm">{ab.name}</p>
+                          <p className="text-xs text-zinc-500 mt-0.5">{ab.description}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-3">
+                          <span className="text-xs text-zinc-400">Tier {ab.tier}</span>
+                          {ab.resourceCost > 0 && <p className="text-xs text-zinc-500">{ab.resourceCost} {ab.resourceType}</p>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
+
+              {/* Inventory */}
+              <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
+                <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Inventory</h2>
+                <div className="text-sm text-zinc-400">
+                  <div className="flex justify-between py-1 border-b border-[#0f3460]"><span>Gold Coins</span><span className="text-[#e5a91a]">{char.gold}</span></div>
+                  {inventory.map((item) => (
+                    <div key={item.id} className="flex justify-between py-1 border-b border-[#0f3460]">
+                      <span>{item.itemName} {item.equipped && <span className="text-green-400 text-xs">(E)</span>}</span>
+                      <span className="text-zinc-500">x{item.quantity}</span>
+                    </div>
+                  ))}
+                  {inventory.length === 0 && <p className="text-zinc-500 text-sm italic mt-2">No items yet</p>}
+                </div>
+              </div>
+
+              {/* Seals */}
+              <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
+                <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Seal Collection</h2>
+                <div className="flex gap-4 text-sm">
+                  {[
+                    { tier: 'Common', val: seals?.common ?? 0, bg: 'bg-green-900/40', border: 'border-green-500/30' },
+                    { tier: 'Uncommon', val: seals?.uncommon ?? 0, bg: 'bg-blue-900/40', border: 'border-blue-500/30' },
+                    { tier: 'Rare', val: seals?.rare ?? 0, bg: 'bg-yellow-900/40', border: 'border-yellow-500/30' },
+                    { tier: 'Epic', val: seals?.epic ?? 0, bg: 'bg-purple-900/40', border: 'border-purple-500/30' },
+                    { tier: 'Legendary', val: seals?.legendary ?? 0, bg: 'bg-red-900/40', border: 'border-red-500/30' },
+                  ].map((s) => (
+                    <div key={s.tier} className="text-center">
+                      <div className={`w-8 h-8 rounded ${s.bg} border ${s.border} flex items-center justify-center text-xs font-bold`}>{s.val}</div>
+                      <span className="text-xs text-zinc-500 mt-1 block">{s.tier}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            {char.profession && PROFESSION_CLASS[char.profession] && (
+              <TabsContent value="skills">
+                <SkillTreePanel characterId={char.id} profession={char.profession} level={char.level} />
+              </TabsContent>
             )}
-          </div>
-
-          {/* Inventory */}
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-            <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Inventory</h2>
-            <div className="text-sm text-zinc-400">
-              <div className="flex justify-between py-1 border-b border-[#0f3460]"><span>Gold Coins</span><span className="text-[#e5a91a]">{char.gold}</span></div>
-              {inventory.map((item) => (
-                <div key={item.id} className="flex justify-between py-1 border-b border-[#0f3460]">
-                  <span>{item.itemName} {item.equipped && <span className="text-green-400 text-xs">(E)</span>}</span>
-                  <span className="text-zinc-500">x{item.quantity}</span>
-                </div>
-              ))}
-              {inventory.length === 0 && <p className="text-zinc-500 text-sm italic mt-2">No items yet</p>}
-            </div>
-          </div>
-
-          {/* Seals */}
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-            <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Seal Collection</h2>
-            <div className="flex gap-4 text-sm">
-              {[
-                { tier: 'Common', val: seals?.common ?? 0, bg: 'bg-green-900/40', border: 'border-green-500/30' },
-                { tier: 'Uncommon', val: seals?.uncommon ?? 0, bg: 'bg-blue-900/40', border: 'border-blue-500/30' },
-                { tier: 'Rare', val: seals?.rare ?? 0, bg: 'bg-yellow-900/40', border: 'border-yellow-500/30' },
-                { tier: 'Epic', val: seals?.epic ?? 0, bg: 'bg-purple-900/40', border: 'border-purple-500/30' },
-                { tier: 'Legendary', val: seals?.legendary ?? 0, bg: 'bg-red-900/40', border: 'border-red-500/30' },
-              ].map((s) => (
-                <div key={s.tier} className="text-center">
-                  <div className={`w-8 h-8 rounded ${s.bg} border ${s.border} flex items-center justify-center text-xs font-bold`}>{s.val}</div>
-                  <span className="text-xs text-zinc-500 mt-1 block">{s.tier}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          </Tabs>
         </div>
       </div>
     </div>

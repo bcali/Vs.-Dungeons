@@ -135,3 +135,61 @@ export interface Campaign {
   createdAt: string;
   updatedAt: string;
 }
+
+// ─── Skill Tree Types ──────────────────────────────────────────────────
+
+export type SkillTreeClass = 'warrior' | 'rogue_ranger';
+export type SkillBranch = 'protection' | 'arms' | 'warrior_core' | 'shadow' | 'precision' | 'survival' | 'rogue_ranger_core';
+export type SkillType = 'active' | 'passive';
+
+export interface SkillTreeSkill {
+  id: string;
+  skillCode: string;
+  name: string;
+  class: SkillTreeClass;
+  branch: SkillBranch;
+  tier: number;
+  skillType: SkillType;
+  maxRank: number;
+  description: string;
+  rankEffects: Record<string, unknown>[] | null;
+  legoTip: string | null;
+  effectJson: Record<string, unknown> | null;
+  sortOrder: number;
+}
+
+export interface CharacterSkillAllocation {
+  id: string;
+  characterId: string;
+  skillId: string;
+  currentRank: number;
+  learnedAtLevel: number | null;
+}
+
+export interface ActionBarSlot {
+  id: string;
+  characterId: string;
+  slotNumber: number;
+  skillId: string | null;
+  abilityId: string | null;
+}
+
+export const PROFESSION_CLASS: Partial<Record<Profession, SkillTreeClass>> = {
+  knight: 'warrior',
+  ranger: 'rogue_ranger',
+  rogue: 'rogue_ranger',
+};
+
+export const TIER_REQUIREMENTS: Record<number, number> = {
+  1: 0, 2: 3, 3: 6, 4: 10, 5: 15,
+};
+
+export const BRANCH_INFO: Record<SkillBranch, { name: string; icon: string; color: string }> = {
+  protection:        { name: 'Protection',  icon: 'Shield',    color: '#3b82f6' },
+  arms:              { name: 'Arms',        icon: 'Sword',     color: '#ef4444' },
+  warrior_core:      { name: 'Core',        icon: 'Swords',    color: '#a855f7' },
+  shadow:            { name: 'Shadow',      icon: 'Moon',      color: '#6366f1' },
+  precision:         { name: 'Precision',   icon: 'Target',    color: '#22c55e' },
+  survival:          { name: 'Survival',    icon: 'Trees',     color: '#84cc16' },
+  rogue_ranger_core: { name: 'Core',        icon: 'Dagger',    color: '#a855f7' },
+};

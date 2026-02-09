@@ -1,7 +1,7 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 
 // ─── Row → App type mappers ────────────────────────────────────────────
@@ -414,4 +414,104 @@ export async function saveCombatLog(
     .single();
   if (error || !data) return null;
   return data.id;
+}
+
+// ─── Skill Tree ────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToSkillTreeSkill(row: any): SkillTreeSkill {
+  return {
+    id: row.id,
+    skillCode: row.skill_code,
+    name: row.name,
+    class: row.class,
+    branch: row.branch,
+    tier: row.tier,
+    skillType: row.skill_type,
+    maxRank: row.max_rank,
+    description: row.description,
+    rankEffects: row.rank_effects,
+    legoTip: row.lego_tip,
+    effectJson: row.effect_json,
+    sortOrder: row.sort_order,
+  };
+}
+
+export async function fetchSkillTreeSkills(skillClass: SkillTreeClass): Promise<SkillTreeSkill[]> {
+  const { data, error } = await getSupabase()
+    .from('skill_tree_skills')
+    .select('*')
+    .eq('class', skillClass)
+    .order('branch')
+    .order('tier')
+    .order('sort_order');
+  if (error || !data) return [];
+  return data.map(rowToSkillTreeSkill);
+}
+
+export async function fetchSkillAllocations(characterId: string): Promise<CharacterSkillAllocation[]> {
+  const { data, error } = await getSupabase()
+    .from('character_skill_allocations')
+    .select('*')
+    .eq('character_id', characterId);
+  if (error || !data) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((row: any) => ({
+    id: row.id,
+    characterId: row.character_id,
+    skillId: row.skill_id,
+    currentRank: row.current_rank,
+    learnedAtLevel: row.learned_at_level,
+  }));
+}
+
+export async function fetchActionBar(characterId: string): Promise<ActionBarSlot[]> {
+  const { data, error } = await getSupabase()
+    .from('character_action_bar')
+    .select('*')
+    .eq('character_id', characterId)
+    .order('slot_number');
+  if (error || !data) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((row: any) => ({
+    id: row.id,
+    characterId: row.character_id,
+    slotNumber: row.slot_number,
+    skillId: row.skill_id,
+    abilityId: row.ability_id,
+  }));
+}
+
+export async function allocateSkillPoint(characterId: string, skillId: string): Promise<number | null> {
+  const { data, error } = await getSupabase()
+    .rpc('allocate_skill_point', { p_character_id: characterId, p_skill_id: skillId });
+  if (error) { console.error('allocate_skill_point error:', error.message); return null; }
+  return data;
+}
+
+export async function respecCharacter(characterId: string): Promise<boolean> {
+  const { error } = await getSupabase()
+    .rpc('respec_character', { p_character_id: characterId });
+  return !error;
+}
+
+export async function setActionBarSlot(
+  characterId: string,
+  slotNumber: number,
+  skillId: string | null,
+  abilityId: string | null
+): Promise<boolean> {
+  const { error } = await getSupabase()
+    .from('character_action_bar')
+    .upsert({
+      character_id: characterId,
+      slot_number: slotNumber,
+      skill_id: skillId,
+      ability_id: abilityId,
+    }, { onConflict: 'character_id,slot_number' });
+  return !error;
+}
+
+export async function clearActionBarSlot(characterId: string, slotNumber: number): Promise<boolean> {
+  return setActionBarSlot(characterId, slotNumber, null, null);
 }
