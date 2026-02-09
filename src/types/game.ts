@@ -123,6 +123,7 @@ export interface Monster {
   specialAbilities: Record<string, unknown>[] | null;
   description: string | null;
   avatarUrl: string | null;
+  xpReward: number;
 }
 
 export interface Campaign {
@@ -193,3 +194,12 @@ export const BRANCH_INFO: Record<SkillBranch, { name: string; icon: string; colo
   survival:          { name: 'Survival',    icon: 'Trees',     color: '#84cc16' },
   rogue_ranger_core: { name: 'Core',        icon: 'Dagger',    color: '#a855f7' },
 };
+
+export interface CatalogItem {
+  id: string;
+  name: string;
+  itemType: ItemType;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  description: string | null;
+  effectJson: Record<string, unknown> | null;
+}

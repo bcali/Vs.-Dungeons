@@ -1,7 +1,7 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot, CatalogItem } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 
 // ─── Row → App type mappers ────────────────────────────────────────────
@@ -46,6 +46,7 @@ function rowToMonster(row: any): Monster {
     specialAbilities: row.special_abilities,
     description: row.description,
     avatarUrl: row.avatar_url,
+    xpReward: row.xp_reward ?? 0,
   };
 }
 
@@ -514,4 +515,74 @@ export async function setActionBarSlot(
 
 export async function clearActionBarSlot(characterId: string, slotNumber: number): Promise<boolean> {
   return setActionBarSlot(characterId, slotNumber, null, null);
+}
+
+// ─── Rewards System ──────────────────────────────────────────────────────
+
+export async function fetchMonstersByIds(ids: string[]): Promise<Monster[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from('monsters')
+    .select('*')
+    .in('id', ids);
+  if (error || !data) return [];
+  return data.map(rowToMonster);
+}
+
+export async function fetchItemCatalog(filters?: { itemType?: string; rarity?: string }): Promise<CatalogItem[]> {
+  let query = getSupabase()
+    .from('item_catalog')
+    .select('*')
+    .order('rarity')
+    .order('name');
+  if (filters?.itemType) query = query.eq('item_type', filters.itemType);
+  if (filters?.rarity) query = query.eq('rarity', filters.rarity);
+  const { data, error } = await query;
+  if (error || !data) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    itemType: row.item_type,
+    rarity: row.rarity,
+    description: row.description,
+    effectJson: row.effect_json,
+  }));
+}
+
+export async function addInventoryItem(
+  characterId: string,
+  itemName: string,
+  itemType: string = 'misc',
+  quantity: number = 1,
+  effectJson?: Record<string, unknown> | null
+): Promise<string | null> {
+  const { data, error } = await getSupabase()
+    .rpc('add_inventory_item', {
+      p_character_id: characterId,
+      p_item_name: itemName,
+      p_item_type: itemType,
+      p_quantity: quantity,
+      p_effect_json: effectJson ?? null,
+    });
+  if (error) { console.error('add_inventory_item error:', error.message); return null; }
+  return data;
+}
+
+export async function incrementXp(characterId: string, amount: number): Promise<number | null> {
+  const { data, error } = await getSupabase()
+    .rpc('increment_xp', {
+      character_uuid: characterId,
+      amount,
+    });
+  if (error) { console.error('increment_xp error:', error.message); return null; }
+  return data;
+}
+
+export async function saveCombatRewards(combatId: string, rewardsJson: unknown): Promise<boolean> {
+  const { error } = await getSupabase()
+    .from('combats')
+    .update({ rewards_json: rewardsJson })
+    .eq('id', combatId);
+  return !error;
 }

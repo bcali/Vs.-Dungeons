@@ -4,7 +4,7 @@ import type { Stats, ResourceType } from './game';
 
 export type ActionType = 'melee_attack' | 'ranged_attack' | 'ability' | 'item' | 'defend' | 'help' | 'move' | 'other';
 export type EffectCategory = 'buff' | 'debuff' | 'cc' | 'dot' | 'hot';
-export type CombatStatus = 'setup' | 'active' | 'completed' | 'abandoned';
+export type CombatStatus = 'setup' | 'active' | 'rewards' | 'completed' | 'abandoned';
 export type Team = 'hero' | 'enemy';
 
 export interface CombatParticipant {

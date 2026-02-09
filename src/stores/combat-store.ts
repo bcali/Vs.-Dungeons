@@ -34,6 +34,7 @@ interface CombatState {
   addLogEntry: (entry: Omit<ActionLogEntry, 'id' | 'timestamp'>) => void;
   getParticipant: (id: string) => CombatParticipant | undefined;
   endCombat: () => void;
+  enterRewardsPhase: () => void;
   resetCombat: () => void;
   persistCombatSnapshot: () => void;
   checkForActiveCombat: () => Promise<boolean>;
@@ -173,6 +174,11 @@ export const useCombatStore = create<CombatState>()(
 
       getParticipant: (id) => {
         return get().participants.find(p => p.id === id);
+      },
+
+      enterRewardsPhase: () => {
+        set({ status: 'rewards' });
+        get().persistCombatSnapshot();
       },
 
       endCombat: () => {

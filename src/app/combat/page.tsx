@@ -6,6 +6,7 @@ import { useCombatStore } from "@/stores/combat-store";
 import { isActionResponse } from "@/lib/claude/action-parser";
 import { isSpeechRecognitionSupported, createSpeechRecognition } from "@/lib/voice/speech-recognition";
 import { speakNarration, stopNarration } from "@/lib/voice/speech-synthesis";
+import { RewardsScreen } from "@/components/combat/rewards-screen";
 import type { VoiceState } from "@/lib/voice/speech-recognition";
 import type { ClaudeResponse, ActiveStatusEffect } from "@/types/combat";
 
@@ -15,7 +16,7 @@ export default function CombatTrackerPage() {
     currentTurnIndex, actionLog,
     advanceTurn, applyDamage, applyHealing, applyStatusEffect,
     removeEffect, tickParticipantEffects, regenResource, setResource,
-    setDefending, addLogEntry, endCombat, resetCombat,
+    setDefending, addLogEntry, endCombat, enterRewardsPhase, resetCombat,
   } = useCombatStore();
 
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
@@ -175,6 +176,11 @@ export default function CombatTrackerPage() {
     processAction(typedInput);
   };
 
+  // Rewards phase
+  if (status === 'rewards') {
+    return <RewardsScreen />;
+  }
+
   // No active combat
   if (status !== 'active') {
     return (
@@ -233,7 +239,7 @@ export default function CombatTrackerPage() {
           }} className="rounded-lg bg-[#0f3460] px-3 py-1 text-xs text-zinc-400 hover:text-white transition-colors">
             Skip Turn
           </button>
-          <button onClick={endCombat} className="rounded-lg bg-[#0f3460] px-3 py-1 text-xs text-zinc-400 hover:text-white transition-colors">
+          <button onClick={enterRewardsPhase} className="rounded-lg bg-[#0f3460] px-3 py-1 text-xs text-zinc-400 hover:text-white transition-colors">
             End Combat
           </button>
         </div>
