@@ -1,57 +1,63 @@
 /**
- * Simple in-memory rate limiter for API routes.
- * Tracks requests per IP within a sliding window.
+ * Rate limiter using Upstash Redis (serverless-friendly).
+ * Falls back to allow-all if Upstash env vars are missing (local dev).
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+let ratelimit: Ratelimit | null = null;
+
+function getRatelimit(): Ratelimit | null {
+  if (ratelimit) return ratelimit;
+
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+
+  ratelimit = new Ratelimit({
+    redis: new Redis({ url, token }),
+    limiter: Ratelimit.slidingWindow(10, '60 s'),
+    prefix: 'vs-dungeons',
+  });
+  return ratelimit;
 }
 
-const store = new Map<string, RateLimitEntry>();
-
-// Clean stale entries every 5 minutes
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-      if (now > entry.resetAt) store.delete(key);
-    }
-  }, 5 * 60 * 1000);
-}
-
-interface RateLimitOptions {
-  maxRequests: number;
-  windowMs: number;
-}
-
-export function rateLimit(
+export async function rateLimit(
   request: Request,
-  options: RateLimitOptions
-): Response | null {
+  _options: { maxRequests: number; windowMs: number }
+): Promise<Response | null> {
+  const limiter = getRatelimit();
+
+  // Fail-open: no Upstash configured → allow all requests
+  if (!limiter) return null;
+
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
     'unknown';
 
-  const key = `rate:${ip}`;
-  const now = Date.now();
-  const entry = store.get(key);
+  try {
+    const { success, limit, remaining } = await limiter.limit(ip);
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + options.windowMs });
+    if (!success) {
+      return Response.json(
+        { error: 'Too many requests. Slow down.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'X-RateLimit-Limit': String(limit),
+            'X-RateLimit-Remaining': String(remaining),
+          },
+        }
+      );
+    }
+
+    return null;
+  } catch (error) {
+    // Fail-open: if Redis is unreachable, allow the request
+    console.warn('Rate limiter unavailable, allowing request:', error);
     return null;
   }
-
-  entry.count++;
-
-  if (entry.count > options.maxRequests) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return Response.json(
-      { error: 'Too many requests. Slow down.' },
-      { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-    );
-  }
-
-  return null;
 }

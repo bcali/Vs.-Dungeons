@@ -5,6 +5,7 @@
  * 1. Failed writes retry 3x with exponential backoff
  * 2. Final failures buffer to localStorage
  * 3. Save indicator state is tracked for UI feedback
+ * 4. Queue pauses when offline and resumes on reconnect
  */
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -21,12 +22,22 @@ const MAX_RETRIES = 3;
 const BACKOFF_BASE_MS = 1000;
 const SAVED_DISPLAY_MS = 2000;
 
+function isOnline(): boolean {
+  return typeof navigator !== 'undefined' ? navigator.onLine : true;
+}
+
 class SaveQueueManager {
   private queue: SaveOperation[] = [];
   private processing = false;
   private status: SaveStatus = 'idle';
   private listeners: Set<StatusListener> = new Set();
   private savedTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.processQueue());
+    }
+  }
 
   onStatusChange(listener: StatusListener): () => void {
     this.listeners.add(listener);
@@ -46,10 +57,20 @@ class SaveQueueManager {
 
   private async processQueue(): Promise<void> {
     if (this.processing || this.queue.length === 0) return;
+
+    // Pause processing when offline — will resume via 'online' event
+    if (!isOnline()) return;
+
     this.processing = true;
     this.setStatus('saving');
 
     while (this.queue.length > 0) {
+      // Re-check connectivity before each operation
+      if (!isOnline()) {
+        this.processing = false;
+        return;
+      }
+
       const op = this.queue[0];
       try {
         await op.execute();

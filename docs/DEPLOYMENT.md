@@ -181,6 +181,8 @@ cd lego-quest
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `ANTHROPIC_API_KEY` | Claude API key |
 | `APP_SECRET_KEY` | API auth key (generate with `openssl rand -hex 32`) |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (optional — fail-open without) |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token (optional — fail-open without) |
 
 ### GCP Service Account
 ```bash

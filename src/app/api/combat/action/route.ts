@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   // --- Rate limiting (10 requests/minute) ---
-  const rateLimitError = rateLimit(request, { maxRequests: 10, windowMs: 60_000 });
+  const rateLimitError = await rateLimit(request, { maxRequests: 10, windowMs: 60_000 });
   if (rateLimitError) return rateLimitError;
 
   // --- Payload size ---
