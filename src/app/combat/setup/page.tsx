@@ -123,7 +123,7 @@ export default function EncounterSetupPage() {
   if (loading) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <span className="text-zinc-500 animate-pulse">Loading...</span>
+        <span className="text-text-muted animate-pulse">Loading...</span>
       </div>
     );
   }
@@ -132,13 +132,13 @@ export default function EncounterSetupPage() {
     <div className="min-h-screen p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/combat" className="text-zinc-400 hover:text-white text-sm">&larr; Back</Link>
-          <h1 className="text-2xl font-bold text-[#e94560]">NEW ENCOUNTER</h1>
+          <Link href="/combat" className="text-text-secondary hover:text-white text-sm">&larr; Back</Link>
+          <h1 className="text-2xl font-bold text-accent-red">NEW ENCOUNTER</h1>
         </div>
         <button
           onClick={handleStartCombat}
           disabled={totalEnemies === 0 || heroes.length === 0}
-          className="rounded-lg bg-[#e94560] px-6 py-2 font-bold hover:bg-[#e94560]/80 transition-colors disabled:opacity-40"
+          className="rounded-lg bg-accent-red px-6 py-2 font-bold hover:bg-accent-red/80 transition-colors disabled:opacity-40"
         >
           Start &rarr;
         </button>
@@ -147,22 +147,22 @@ export default function EncounterSetupPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Heroes */}
         <div>
-          <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">
             Heroes ({heroes.length})
           </h2>
           <div className="grid grid-cols-2 gap-4">
             {heroes.map((hero) => (
-              <div key={hero.id} className="rounded-xl bg-[#16213e] border border-green-500/30 p-4 flex items-center gap-4">
+              <div key={hero.id} className="rounded-xl bg-bg-card border border-green-500/30 p-4 flex items-center gap-4">
                 <span className="text-green-400">&#x2705;</span>
                 <div>
                   <p className="font-semibold">{hero.heroName || "Unnamed"}</p>
-                  <p className="text-xs text-zinc-400">Level {hero.level} {hero.profession}</p>
+                  <p className="text-xs text-text-secondary">Level {hero.level} {hero.profession}</p>
                 </div>
               </div>
             ))}
             {heroes.length === 0 && (
               <div className="col-span-2 text-center py-4">
-                <p className="text-zinc-500 text-sm">No heroes in campaign. <Link href="/character" className="text-[#e5a91a] hover:underline">Create some first</Link></p>
+                <p className="text-text-muted text-sm">No heroes in campaign. <Link href="/character" className="text-accent-gold hover:underline">Create some first</Link></p>
               </div>
             )}
           </div>
@@ -170,22 +170,22 @@ export default function EncounterSetupPage() {
 
         {/* Monster Library */}
         <div>
-          <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">
             Enemies &mdash; Monster Library
           </h2>
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-4">
+          <div className="rounded-xl bg-bg-card border border-border-card p-4">
             <div className="flex gap-3 mb-4">
               <input
                 type="text"
                 placeholder="Search monsters..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 rounded-lg bg-[#0f3460] border border-[#0f3460] px-3 py-2 text-sm text-white placeholder-zinc-500"
+                className="flex-1 rounded-lg bg-bg-input border border-border-card px-3 py-2 text-sm text-white placeholder-text-muted"
               />
               <select
                 value={levelFilter ?? ""}
                 onChange={(e) => setLevelFilter(e.target.value ? parseInt(e.target.value) : null)}
-                className="rounded-lg bg-[#0f3460] border border-[#0f3460] px-3 py-2 text-sm text-zinc-400"
+                className="rounded-lg bg-bg-input border border-border-card px-3 py-2 text-sm text-text-secondary"
               >
                 <option value="">All Levels</option>
                 {[1, 2, 3, 5, 7, 10].map((l) => (
@@ -195,23 +195,23 @@ export default function EncounterSetupPage() {
             </div>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {filteredMonsters.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-lg bg-[#0f3460]/50 px-4 py-2">
+                <div key={m.id} className="flex items-center justify-between rounded-lg bg-bg-input/50 px-4 py-2">
                   <div>
                     <span className="font-medium text-sm">{m.name}</span>
-                    <span className="text-xs text-zinc-500 ml-2">(Lv{m.level})</span>
-                    {m.isBoss && <span className="text-xs text-[#e5a91a] ml-2">BOSS</span>}
-                    <span className="text-xs text-zinc-600 ml-2">HP:{m.hp}</span>
+                    <span className="text-xs text-text-muted ml-2">(Lv{m.level})</span>
+                    {m.isBoss && <span className="text-xs text-accent-gold ml-2">BOSS</span>}
+                    <span className="text-xs text-text-dim ml-2">HP:{m.hp}</span>
                   </div>
                   <button
                     onClick={() => addMonster(m)}
-                    className="rounded bg-[#e94560]/20 text-[#e94560] px-3 py-1 text-xs font-medium hover:bg-[#e94560]/40 transition-colors"
+                    className="rounded bg-accent-red/20 text-accent-red px-3 py-1 text-xs font-medium hover:bg-accent-red/40 transition-colors"
                   >
                     + Add
                   </button>
                 </div>
               ))}
               {filteredMonsters.length === 0 && (
-                <p className="text-zinc-500 text-sm text-center py-4">No monsters found</p>
+                <p className="text-text-muted text-sm text-center py-4">No monsters found</p>
               )}
             </div>
           </div>
@@ -219,25 +219,25 @@ export default function EncounterSetupPage() {
 
         {/* Encounter Roster */}
         <div>
-          <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">
             Encounter ({totalEnemies} enemies)
           </h2>
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-4">
+          <div className="rounded-xl bg-bg-card border border-border-card p-4">
             {selectedMonsters.length === 0 ? (
-              <p className="text-zinc-500 text-sm italic text-center">Add enemies from the library above</p>
+              <p className="text-text-muted text-sm italic text-center">Add enemies from the library above</p>
             ) : (
               <div className="space-y-2">
                 {selectedMonsters.map(({ monster, count }) => (
-                  <div key={monster.id} className="flex items-center justify-between rounded-lg bg-[#0f3460]/50 px-4 py-2">
+                  <div key={monster.id} className="flex items-center justify-between rounded-lg bg-bg-input/50 px-4 py-2">
                     <div>
                       <span className="font-medium text-sm">{monster.name}</span>
-                      <span className="text-xs text-zinc-500 ml-2">(Lv{monster.level})</span>
-                      {monster.isBoss && <span className="text-xs text-[#e5a91a] ml-2">BOSS</span>}
+                      <span className="text-xs text-text-muted ml-2">(Lv{monster.level})</span>
+                      {monster.isBoss && <span className="text-xs text-accent-gold ml-2">BOSS</span>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => removeMonster(monster.id)} className="w-6 h-6 rounded bg-[#0f3460] text-zinc-400 hover:text-white text-xs flex items-center justify-center">-</button>
+                      <button onClick={() => removeMonster(monster.id)} className="w-6 h-6 rounded bg-bg-input text-text-secondary hover:text-white text-xs flex items-center justify-center">-</button>
                       <span className="text-sm font-bold w-4 text-center">{count}</span>
-                      <button onClick={() => addMonster(monster)} className="w-6 h-6 rounded bg-[#0f3460] text-zinc-400 hover:text-white text-xs flex items-center justify-center">+</button>
+                      <button onClick={() => addMonster(monster)} className="w-6 h-6 rounded bg-bg-input text-text-secondary hover:text-white text-xs flex items-center justify-center">+</button>
                     </div>
                   </div>
                 ))}
@@ -253,12 +253,12 @@ export default function EncounterSetupPage() {
             placeholder="Encounter name (e.g., Forest Path Ambush)"
             value={encounterName}
             onChange={(e) => setEncounterName(e.target.value)}
-            className="flex-1 rounded-lg bg-[#16213e] border border-[#0f3460] px-4 py-3 text-sm text-white placeholder-zinc-500"
+            className="flex-1 rounded-lg bg-bg-card border border-border-card px-4 py-3 text-sm text-white placeholder-text-muted"
           />
           <button
             onClick={handleStartCombat}
             disabled={totalEnemies === 0 || heroes.length === 0}
-            className="rounded-xl bg-[#e94560] px-6 py-3 font-bold hover:bg-[#e94560]/80 transition-colors whitespace-nowrap disabled:opacity-40"
+            className="rounded-xl bg-accent-red px-6 py-3 font-bold hover:bg-accent-red/80 transition-colors whitespace-nowrap disabled:opacity-40"
           >
             Roll Initiative &amp; Start Combat
           </button>

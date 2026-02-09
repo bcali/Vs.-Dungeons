@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -45,6 +45,44 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Game design tokens */
+  --color-bg-page: var(--bg-page);
+  --color-bg-card: var(--bg-card);
+  --color-bg-input: var(--bg-input);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-red: var(--accent-red);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-border-card: var(--border-card);
+  --color-border-active-gold: var(--border-active-gold);
+  --color-border-active-green: var(--border-active-green);
+  --color-border-active-red: var(--border-active-red);
+  --color-hp-high: var(--hp-high);
+  --color-hp-mid: var(--hp-mid);
+  --color-hp-low: var(--hp-low);
+  --color-resource-rage: var(--resource-rage);
+  --color-resource-energy: var(--resource-energy);
+  --color-resource-mana: var(--resource-mana);
+  --color-stat-bar: var(--stat-bar);
+  --color-xp-bar: var(--xp-bar);
+  --color-branch-protection: var(--branch-protection);
+  --color-branch-arms: var(--branch-arms);
+  --color-branch-warrior-core: var(--branch-warrior-core);
+  --color-branch-shadow: var(--branch-shadow);
+  --color-branch-precision: var(--branch-precision);
+  --color-branch-survival: var(--branch-survival);
+  --color-branch-rogue-core: var(--branch-rogue-core);
+
+  /* LEGO launcher tokens */
+  --color-lego-red: var(--lego-red);
+  --color-lego-blue: var(--lego-blue);
+  --color-lego-yellow: var(--lego-yellow);
+  --color-lego-green: var(--lego-green);
+  --color-lego-panel: var(--lego-panel);
+  --color-lego-border: var(--lego-border);
 }
 
 :root {
@@ -83,37 +121,76 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* shadcn overrides — game palette */
+  --background: #1A1A2E;
+  --foreground: #FFFFFF;
+  --card: #16213E;
+  --card-foreground: #FFFFFF;
+  --popover: #16213E;
+  --popover-foreground: #FFFFFF;
+  --primary: #E5A91A;
+  --primary-foreground: #1A1A2E;
+  --secondary: #0F3460;
+  --secondary-foreground: #FFFFFF;
+  --muted: #0F3460;
+  --muted-foreground: #71717A;
+  --accent: #0F3460;
+  --accent-foreground: #FFFFFF;
+  --destructive: #E94560;
+  --border: #0F3460;
+  --input: #0F3460;
+  --ring: rgba(229, 169, 26, 0.3);
+  --chart-1: #E5A91A;
+  --chart-2: #E94560;
+  --chart-3: #3B82F6;
+  --chart-4: #22C55E;
+  --chart-5: #A855F7;
+  --sidebar: #16213E;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #E5A91A;
+  --sidebar-primary-foreground: #1A1A2E;
+  --sidebar-accent: #0F3460;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #0F3460;
+  --sidebar-ring: rgba(229, 169, 26, 0.3);
+
+  /* Game design tokens */
+  --bg-page: #1A1A2E;
+  --bg-card: #16213E;
+  --bg-input: #0F3460;
+  --accent-gold: #E5A91A;
+  --accent-red: #E94560;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --text-dim: #52525B;
+  --border-card: #0F3460;
+  --border-active-gold: rgba(229, 169, 26, 0.3);
+  --border-active-green: #22C55E;
+  --border-active-red: #EF4444;
+  --hp-high: #22C55E;
+  --hp-mid: #EAB308;
+  --hp-low: #EF4444;
+  --resource-rage: #EF4444;
+  --resource-energy: #FACC15;
+  --resource-mana: #3B82F6;
+  --stat-bar: #3B82F6;
+  --xp-bar: #E5A91A;
+  --branch-protection: #3B82F6;
+  --branch-arms: #EF4444;
+  --branch-warrior-core: #A855F7;
+  --branch-shadow: #6366F1;
+  --branch-precision: #22C55E;
+  --branch-survival: #84CC16;
+  --branch-rogue-core: #A855F7;
+
+  /* LEGO launcher tokens */
+  --lego-red: #E3000B;
+  --lego-blue: #0055BF;
+  --lego-yellow: #F2CD37;
+  --lego-green: #237841;
+  --lego-panel: #1e1e1e;
+  --lego-border: #333333;
 }
 
 @layer base {

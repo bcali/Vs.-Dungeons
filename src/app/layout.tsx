@@ -1,25 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "LEGO QUEST — Digital GM Toolkit",
-  description: "Tablet-optimized RPG toolkit for LEGO QUEST tabletop sessions",
+  title: "Vs. Dungeons — Digital GM Toolkit",
+  description: "Tablet-optimized RPG toolkit for Vs. Dungeons tabletop sessions",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "LEGO QUEST",
+    title: "Vs. Dungeons",
   },
 };
 
@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#1a1a2e] text-white min-h-screen`}
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-bg-page text-white min-h-screen`}
       >
         {children}
       </body>

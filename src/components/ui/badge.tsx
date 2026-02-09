@@ -18,6 +18,12 @@ const badgeVariants = cva(
           "border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         link: "text-primary underline-offset-4 [a&]:hover:underline",
+        buff: "bg-hp-high/20 text-hp-high border-hp-high/30",
+        debuff: "bg-accent-red/20 text-accent-red border-accent-red/30",
+        cc: "bg-resource-energy/20 text-resource-energy border-resource-energy/30",
+        dot: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+        hot: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+        points: "bg-accent-gold/20 text-accent-gold border-border-active-gold",
       },
     },
     defaultVariants: {
@@ -30,16 +36,17 @@ function Badge({
   className,
   variant = "default",
   asChild = false,
+  animatePulse = false,
   ...props
 }: React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  VariantProps<typeof badgeVariants> & { asChild?: boolean; animatePulse?: boolean }) {
   const Comp = asChild ? Slot.Root : "span"
 
   return (
     <Comp
       data-slot="badge"
       data-variant={variant}
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(badgeVariants({ variant }), animatePulse && "animate-pulse", className)}
       {...props}
     />
   )

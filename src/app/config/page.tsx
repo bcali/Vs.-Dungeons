@@ -46,7 +46,7 @@ export default function ConfigPage() {
   if (loading || !config) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <span className="text-zinc-500 animate-pulse">Loading config...</span>
+        <span className="text-text-muted animate-pulse">Loading config...</span>
       </div>
     );
   }
@@ -55,26 +55,26 @@ export default function ConfigPage() {
     <div className="min-h-screen p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-zinc-400 hover:text-white text-sm">&larr; Home</Link>
-          <h1 className="text-2xl font-bold text-[#e5a91a]">GAME CONFIGURATION</h1>
+          <Link href="/" className="text-text-secondary hover:text-white text-sm">&larr; Home</Link>
+          <h1 className="text-2xl font-bold text-accent-gold">GAME CONFIGURATION</h1>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleReset} className="rounded-lg bg-[#0f3460] px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">
+          <button onClick={handleReset} className="rounded-lg bg-bg-input px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors">
             Reset Defaults
           </button>
           <button onClick={handleSave} disabled={!isDirty || saving}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${isDirty ? 'bg-[#e5a91a] text-[#1a1a2e] hover:bg-[#e5a91a]/80' : 'bg-[#0f3460] text-zinc-500 cursor-default'}`}>
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${isDirty ? 'bg-accent-gold text-bg-page hover:bg-accent-gold/80' : 'bg-bg-input text-text-muted cursor-default'}`}>
             {saving ? "Saving..." : isDirty ? "Save" : "Saved"}
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-[#0f3460] pb-2">
+      <div className="flex gap-2 mb-6 border-b border-border-card pb-2">
         {TABS.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${
-              activeTab === tab.key ? "bg-[#16213e] text-[#e5a91a] border-b-2 border-[#e5a91a]" : "text-zinc-500 hover:text-zinc-300"
+              activeTab === tab.key ? "bg-bg-card text-accent-gold border-b-2 border-accent-gold" : "text-text-muted hover:text-zinc-300"
             }`}>
             {tab.label}
           </button>
@@ -98,11 +98,11 @@ type UpdateFn = <K extends keyof GameConfig>(field: K, value: GameConfig[K]) => 
 function NumberField({ label, value, onChange, min, max }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-zinc-400">{label}</span>
+      <span className="text-sm text-text-secondary">{label}</span>
       <div className="flex items-center gap-2">
-        <button onClick={() => onChange(Math.max(min ?? 0, value - 1))} className="w-7 h-7 rounded bg-[#0f3460] text-zinc-400 hover:text-white text-sm flex items-center justify-center">-</button>
+        <button onClick={() => onChange(Math.max(min ?? 0, value - 1))} className="w-7 h-7 rounded bg-bg-input text-text-secondary hover:text-white text-sm flex items-center justify-center">-</button>
         <span className="text-lg font-bold w-8 text-center">{value}</span>
-        <button onClick={() => onChange(Math.min(max ?? 999, value + 1))} className="w-7 h-7 rounded bg-[#0f3460] text-zinc-400 hover:text-white text-sm flex items-center justify-center">+</button>
+        <button onClick={() => onChange(Math.min(max ?? 999, value + 1))} className="w-7 h-7 rounded bg-bg-input text-text-secondary hover:text-white text-sm flex items-center justify-center">+</button>
       </div>
     </div>
   );
@@ -110,34 +110,34 @@ function NumberField({ label, value, onChange, min, max }: { label: string; valu
 
 function StatsTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-6">
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">Stat System</h2>
+    <div className="rounded-xl bg-bg-card border border-border-card p-6">
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Stat System</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <NumberField label="Base Stat Value" value={config.statBaseValue} onChange={(v) => update('statBaseValue', v)} min={1} max={10} />
           <NumberField label="Stat Cap" value={config.statCap} onChange={(v) => update('statCap', v)} min={5} max={30} />
           <NumberField label="Base Movement" value={config.movementBase} onChange={(v) => update('movementBase', v)} min={1} max={20} />
           <div className="flex items-center justify-between">
-            <span className="text-sm text-zinc-400">HP Formula</span>
+            <span className="text-sm text-text-secondary">HP Formula</span>
             <span className="text-sm text-zinc-300">CON x <span className="text-lg font-bold">3</span></span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-zinc-400">Mana Pool Formula</span>
+            <span className="text-sm text-text-secondary">Mana Pool Formula</span>
             <span className="text-sm text-zinc-300">MNA x <span className="text-lg font-bold">15</span></span>
           </div>
         </div>
         <div>
-          <h3 className="text-xs text-zinc-500 mb-3 uppercase">Stat Points Per Level</h3>
+          <h3 className="text-xs text-text-muted mb-3 uppercase">Stat Points Per Level</h3>
           <div className="grid grid-cols-4 gap-2 text-xs">
             {config.statPointsPerLevel.map((pts, i) => (
-              <div key={i} className="flex items-center justify-between bg-[#0f3460]/50 rounded px-2 py-1">
-                <span className="text-zinc-500">Lv{i + 1}</span>
+              <div key={i} className="flex items-center justify-between bg-bg-input/50 rounded px-2 py-1">
+                <span className="text-text-muted">Lv{i + 1}</span>
                 <span className="font-bold">{pts}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-zinc-500 mt-2">
-            Total by Lv20: <span className="text-[#e5a91a] font-bold">{config.statPointsPerLevel.reduce((s, v) => s + v, 0)}</span>
+          <p className="text-xs text-text-muted mt-2">
+            Total by Lv20: <span className="text-accent-gold font-bold">{config.statPointsPerLevel.reduce((s, v) => s + v, 0)}</span>
           </p>
         </div>
       </div>
@@ -147,8 +147,8 @@ function StatsTab({ config, update }: { config: GameConfig; update: UpdateFn }) 
 
 function ResourcesTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-6 space-y-6">
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">Resource Pools</h2>
+    <div className="rounded-xl bg-bg-card border border-border-card p-6 space-y-6">
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Resource Pools</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <NumberField label="Energy Pool Max" value={config.energyPoolMax} onChange={(v) => update('energyPoolMax', v)} min={10} max={500} />
@@ -157,7 +157,7 @@ function ResourcesTab({ config, update }: { config: GameConfig; update: UpdateFn
           <NumberField label="Energy Regen / Turn" value={config.energyRegenPerTurn} onChange={(v) => update('energyRegenPerTurn', v)} min={0} max={100} />
         </div>
         <div className="space-y-4">
-          <h3 className="text-xs text-zinc-500 uppercase">Rage Generation</h3>
+          <h3 className="text-xs text-text-muted uppercase">Rage Generation</h3>
           <NumberField label="On Hit Taken" value={config.rageOnHitTaken} onChange={(v) => update('rageOnHitTaken', v)} min={0} max={50} />
           <NumberField label="On Melee Hit Landed" value={config.rageOnMeleeHit} onChange={(v) => update('rageOnMeleeHit', v)} min={0} max={50} />
           <NumberField label="On Crit Taken" value={config.rageOnCritTaken} onChange={(v) => update('rageOnCritTaken', v)} min={0} max={50} />
@@ -171,8 +171,8 @@ function ResourcesTab({ config, update }: { config: GameConfig; update: UpdateFn
 
 function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-6 space-y-6">
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">Combat Rules</h2>
+    <div className="rounded-xl bg-bg-card border border-border-card p-6 space-y-6">
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Combat Rules</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <NumberField label="Defend Bonus" value={config.defendBonus} onChange={(v) => update('defendBonus', v)} min={1} max={10} />
@@ -181,7 +181,7 @@ function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn })
           <NumberField label="Lucky Saves / Session" value={config.luckySavesPerSession} onChange={(v) => update('luckySavesPerSession', v)} min={0} max={5} />
         </div>
         <div className="space-y-4">
-          <h3 className="text-xs text-zinc-500 uppercase">Difficulty Targets</h3>
+          <h3 className="text-xs text-text-muted uppercase">Difficulty Targets</h3>
           <NumberField label="Easy" value={config.difficultyTargets.easy} onChange={(v) => update('difficultyTargets', { ...config.difficultyTargets, easy: v })} min={1} max={25} />
           <NumberField label="Medium" value={config.difficultyTargets.medium} onChange={(v) => update('difficultyTargets', { ...config.difficultyTargets, medium: v })} min={1} max={25} />
           <NumberField label="Hard" value={config.difficultyTargets.hard} onChange={(v) => update('difficultyTargets', { ...config.difficultyTargets, hard: v })} min={1} max={30} />
@@ -189,8 +189,8 @@ function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn })
         </div>
       </div>
       <div>
-        <h3 className="text-xs text-zinc-500 uppercase mb-2">Defense Formulas</h3>
-        <div className="grid grid-cols-2 gap-4 text-sm text-zinc-400">
+        <h3 className="text-xs text-text-muted uppercase mb-2">Defense Formulas</h3>
+        <div className="grid grid-cols-2 gap-4 text-sm text-text-secondary">
           <div>Melee Defense: <span className="text-zinc-300">{config.meleeDefenseFormula}</span></div>
           <div>Ranged Defense: <span className="text-zinc-300">{config.rangedDefenseFormula}</span></div>
         </div>
@@ -201,21 +201,21 @@ function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn })
 
 function LevelingTab({ config }: { config: GameConfig }) {
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-6">
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">XP Thresholds</h2>
+    <div className="rounded-xl bg-bg-card border border-border-card p-6">
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">XP Thresholds</h2>
       <div className="grid grid-cols-4 gap-2 text-xs mb-6">
         {config.xpThresholds.map((xp, i) => (
-          <div key={i} className="flex items-center justify-between bg-[#0f3460]/50 rounded px-3 py-2">
-            <span className="text-zinc-500">Lv{i + 1}</span>
-            <span className="font-bold text-[#e5a91a]">{xp} XP</span>
+          <div key={i} className="flex items-center justify-between bg-bg-input/50 rounded px-3 py-2">
+            <span className="text-text-muted">Lv{i + 1}</span>
+            <span className="font-bold text-accent-gold">{xp} XP</span>
           </div>
         ))}
       </div>
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">XP Awards</h2>
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">XP Awards</h2>
       <div className="grid grid-cols-2 gap-3 text-sm">
         {Object.entries(config.xpAwards).map(([key, value]) => (
-          <div key={key} className="flex justify-between bg-[#0f3460]/50 rounded px-3 py-2">
-            <span className="text-zinc-400">{key.replace(/_/g, ' ')}</span>
+          <div key={key} className="flex justify-between bg-bg-input/50 rounded px-3 py-2">
+            <span className="text-text-secondary">{key.replace(/_/g, ' ')}</span>
             <span className="font-bold">{Array.isArray(value) ? value.join('-') : value}</span>
           </div>
         ))}
@@ -226,16 +226,16 @@ function LevelingTab({ config }: { config: GameConfig }) {
 
 function LootTab({ config }: { config: GameConfig }) {
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-6">
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">Loot Tables</h2>
+    <div className="rounded-xl bg-bg-card border border-border-card p-6">
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Loot Tables</h2>
       <div className="space-y-4">
         {Object.entries(config.lootTables).map(([tier, table]) => (
           <div key={tier}>
-            <h3 className="text-xs text-zinc-500 uppercase mb-2">Level {tier}</h3>
+            <h3 className="text-xs text-text-muted uppercase mb-2">Level {tier}</h3>
             <div className="grid grid-cols-5 gap-2 text-xs">
               {Object.entries(table).map(([roll, reward]) => (
-                <div key={roll} className="bg-[#0f3460]/50 rounded px-2 py-1.5 text-center">
-                  <div className="text-zinc-500">{roll}</div>
+                <div key={roll} className="bg-bg-input/50 rounded px-2 py-1.5 text-center">
+                  <div className="text-text-muted">{roll}</div>
                   <div className="font-medium">{reward}</div>
                 </div>
               ))}
@@ -249,12 +249,12 @@ function LootTab({ config }: { config: GameConfig }) {
 
 function AbilitiesTab({ config }: { config: GameConfig }) {
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-6">
-      <h2 className="text-sm font-semibold text-[#e5a91a] mb-4 uppercase tracking-wider">Ability Costs by Tier</h2>
+    <div className="rounded-xl bg-bg-card border border-border-card p-6">
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Ability Costs by Tier</h2>
       <div className="grid grid-cols-4 gap-3 text-sm">
         {Object.entries(config.abilityCosts).map(([tier, cost]) => (
-          <div key={tier} className="bg-[#0f3460]/50 rounded px-3 py-2 text-center">
-            <div className="text-xs text-zinc-500 mb-1">Tier {tier}</div>
+          <div key={tier} className="bg-bg-input/50 rounded px-3 py-2 text-center">
+            <div className="text-xs text-text-muted mb-1">Tier {tier}</div>
             <div className="font-bold">{Array.isArray(cost) ? cost.join('-') : cost}</div>
           </div>
         ))}

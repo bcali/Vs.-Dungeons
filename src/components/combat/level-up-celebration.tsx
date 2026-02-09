@@ -45,7 +45,7 @@ export function LevelUpCelebration({ heroes, onComplete }: LevelUpCelebrationPro
         {Array.from({ length: 20 }).map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 rounded-full bg-[#e5a91a] animate-bounce"
+            className="absolute w-2 h-2 rounded-full bg-accent-gold animate-bounce"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -59,7 +59,7 @@ export function LevelUpCelebration({ heroes, onComplete }: LevelUpCelebrationPro
 
       {/* Content */}
       <div className="relative text-center space-y-8">
-        <h1 className="text-6xl font-black text-[#e5a91a] tracking-wider animate-pulse drop-shadow-lg">
+        <h1 className="text-6xl font-black text-accent-gold tracking-wider animate-pulse drop-shadow-lg">
           LEVEL UP!
         </h1>
 
@@ -70,23 +70,23 @@ export function LevelUpCelebration({ heroes, onComplete }: LevelUpCelebrationPro
             return (
               <div
                 key={hero.name}
-                className="rounded-xl bg-[#16213e]/90 border-2 border-[#e5a91a] px-8 py-5 backdrop-blur-sm"
+                className="rounded-xl bg-bg-card/90 border-2 border-accent-gold px-8 py-5 backdrop-blur-sm"
               >
                 <p className="text-2xl font-bold text-white mb-2">{hero.name}</p>
                 <p className="text-lg text-zinc-300">
-                  Level {hero.previousLevel} → <span className="text-[#e5a91a] font-bold">Level {hero.newLevel}</span>
+                  Level {hero.previousLevel} → <span className="text-accent-gold font-bold">Level {hero.newLevel}</span>
                 </p>
-                <p className="text-sm text-[#e5a91a] mt-1">{newRank}</p>
+                <p className="text-sm text-accent-gold mt-1">{newRank}</p>
                 <div className="flex justify-center gap-4 mt-3 text-xs text-zinc-300">
-                  <span className="bg-[#0f3460] rounded-lg px-3 py-1">+{levelsGained} Stat Point{levelsGained > 1 ? "s" : ""}</span>
-                  <span className="bg-[#0f3460] rounded-lg px-3 py-1">+{levelsGained} Skill Point{levelsGained > 1 ? "s" : ""}</span>
+                  <span className="bg-bg-input rounded-lg px-3 py-1">+{levelsGained} Stat Point{levelsGained > 1 ? "s" : ""}</span>
+                  <span className="bg-bg-input rounded-lg px-3 py-1">+{levelsGained} Skill Point{levelsGained > 1 ? "s" : ""}</span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <p className="text-zinc-500 text-sm">Click anywhere to continue</p>
+        <p className="text-text-muted text-sm">Click anywhere to continue</p>
       </div>
     </div>
   );

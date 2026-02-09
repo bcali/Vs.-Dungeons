@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSkillTreeStore } from "@/stores/skill-tree-store";
 import type { SkillTreeSkill } from "@/types/game";
+import { cn } from "@/lib/utils";
 
 interface SkillNodeProps {
   skill: SkillTreeSkill;
@@ -13,7 +14,6 @@ export function SkillNode({ skill, locked }: SkillNodeProps) {
   const { canAllocate, getAllocationForSkill, allocatePoint, equipToBar, actionBar } =
     useSkillTreeStore();
   const [allocating, setAllocating] = useState(false);
-  const [equipping, setEquipping] = useState(false);
 
   const allocation = getAllocationForSkill(skill.id);
   const currentRank = allocation?.currentRank ?? 0;
@@ -31,7 +31,6 @@ export function SkillNode({ skill, locked }: SkillNodeProps) {
   };
 
   const handleEquip = async () => {
-    // Find first empty slot
     const usedSlots = new Set(actionBar.filter((s) => s.skillId || s.abilityId).map((s) => s.slotNumber));
     let emptySlot = 0;
     for (let i = 1; i <= 5; i++) {
@@ -40,94 +39,89 @@ export function SkillNode({ skill, locked }: SkillNodeProps) {
         break;
       }
     }
-    if (emptySlot === 0) return; // All slots full
-    setEquipping(true);
+    if (emptySlot === 0) return;
     await equipToBar(emptySlot, skill.id, null);
-    setEquipping(false);
   };
 
+  // Border color based on state
+  let borderColor = "border-zinc-700";
+  if (canLearn && !isLearned) borderColor = "border-green-500/50";
+  if (isLearned && !isMaxed) borderColor = "border-green-500";
+  if (isMaxed) borderColor = "border-amber-400";
+
+  // Icon opacity
+  let iconClass = "opacity-40 grayscale";
+  if (canLearn) iconClass = "opacity-70";
+  if (isLearned) iconClass = "opacity-100";
+
   return (
-    <div
-      className={`flex items-start gap-3 rounded-lg px-4 py-3 transition-colors ${
-        locked
-          ? "bg-[#0f3460]/20"
-          : isMaxed
-          ? "bg-[#e5a91a]/5 border border-[#e5a91a]/20"
-          : isLearned
-          ? "bg-[#0f3460]/50 border border-[#3b82f6]/20"
-          : "bg-[#0f3460]/30 hover:bg-[#0f3460]/50"
-      }`}
-    >
-      {/* Type Icon */}
-      <div className="flex-shrink-0 mt-0.5">
-        {isActive ? (
-          <span className="text-base" title="Active - uses action bar slot">
-            ⚔️
-          </span>
-        ) : (
-          <span className="text-base" title="Passive - always on">
-            🛡️
-          </span>
+    <div className="group relative">
+      {/* Node button */}
+      <button
+        onClick={handleAllocate}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (isActive && isLearned && !isEquipped) handleEquip();
+        }}
+        disabled={locked || (!canLearn && !isLearned)}
+        className={cn(
+          "w-full aspect-square rounded-lg bg-black/60 border-2 transition-all relative overflow-hidden",
+          "hover:scale-105 active:scale-95 disabled:hover:scale-100",
+          borderColor,
+          isMaxed && "shadow-[0_0_10px_rgba(251,191,36,0.3)]",
+          locked && "opacity-40"
         )}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`font-medium text-sm ${isMaxed ? "text-[#e5a91a]" : isLearned ? "text-white" : locked ? "text-zinc-500" : "text-zinc-300"}`}>
-            {skill.name}
+      >
+        {/* Icon area */}
+        <div className={cn("w-full h-full flex items-center justify-center p-1.5", iconClass)}>
+          <span className="text-lg">
+            {isActive ? "⚔️" : "🛡️"}
           </span>
-          <span className="text-xs text-zinc-600">{skill.skillCode}</span>
         </div>
-        <p className={`text-xs mt-0.5 ${locked ? "text-zinc-600" : "text-zinc-400"}`}>
-          {skill.description}
-        </p>
+
+        {/* Rank counter */}
+        <div className={cn(
+          "absolute bottom-0.5 right-0.5 text-[9px] font-bold px-1 rounded-sm border leading-tight",
+          isMaxed ? "bg-amber-500 text-black border-amber-400" :
+          isLearned ? "bg-green-900 text-green-100 border-green-700" :
+          "bg-black/80 text-zinc-500 border-zinc-700"
+        )}>
+          {currentRank}/{skill.maxRank}
+        </div>
+
+        {/* Equip indicator */}
+        {isEquipped && (
+          <div className="absolute top-0.5 left-0.5 w-2 h-2 rounded-full bg-green-400" />
+        )}
+      </button>
+
+      {/* Name below node */}
+      <p className={cn(
+        "text-[10px] text-center mt-1 leading-tight truncate",
+        isMaxed ? "text-accent-gold" : isLearned ? "text-white" : "text-text-muted"
+      )}>
+        {skill.name}
+      </p>
+
+      {/* Tooltip */}
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-zinc-900/95 border border-white/20 rounded-lg p-3 z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
+        <h4 className="font-bold text-white text-sm">{skill.name}</h4>
+        <div className="text-[10px] text-text-dim mt-0.5">{skill.skillCode}</div>
+        <div className="text-xs text-accent-gold mt-1">
+          Rank {currentRank}/{skill.maxRank} — {isActive ? "Active" : "Passive"}
+        </div>
+        <p className="text-xs text-text-secondary mt-1.5 leading-tight">{skill.description}</p>
         {skill.legoTip && isLearned && (
-          <p className="text-xs text-amber-600/70 mt-1 italic">{skill.legoTip}</p>
+          <p className="text-xs text-amber-600/70 mt-1.5 italic">{skill.legoTip}</p>
         )}
-      </div>
-
-      {/* Rank + Actions */}
-      <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
-        {/* Rank dots */}
-        <div className="flex gap-1">
-          {Array.from({ length: skill.maxRank }, (_, i) => (
-            <div
-              key={i}
-              className={`w-2.5 h-2.5 rounded-full border ${
-                i < currentRank
-                  ? "bg-[#e5a91a] border-[#e5a91a]"
-                  : "bg-transparent border-zinc-600"
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Action buttons */}
-        {!locked && (
-          <div className="flex gap-1">
-            {canLearn && (
-              <button
-                onClick={handleAllocate}
-                disabled={allocating}
-                className="px-2 py-1 rounded text-xs font-medium bg-[#e5a91a]/20 text-[#e5a91a] hover:bg-[#e5a91a]/30 transition-colors disabled:opacity-50"
-              >
-                {allocating ? "..." : isLearned ? "+1" : "Learn"}
-              </button>
-            )}
-            {isActive && isLearned && !isEquipped && (
-              <button
-                onClick={handleEquip}
-                disabled={equipping}
-                className="px-2 py-1 rounded text-xs font-medium bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-colors disabled:opacity-50"
-              >
-                {equipping ? "..." : "Equip"}
-              </button>
-            )}
-            {isEquipped && (
-              <span className="px-2 py-1 text-xs text-green-400">Equipped</span>
-            )}
-          </div>
+        {canLearn && !isMaxed && (
+          <div className="mt-2 text-xs text-green-400">Click to learn</div>
+        )}
+        {isActive && isLearned && !isEquipped && (
+          <div className="mt-1 text-xs text-stat-bar">Right-click to equip</div>
+        )}
+        {locked && (
+          <div className="mt-2 text-xs text-red-400 italic">Requires more points in tree</div>
         )}
       </div>
     </div>

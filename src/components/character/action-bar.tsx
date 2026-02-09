@@ -15,8 +15,8 @@ export function ActionBar() {
   if (!hasAny) return null;
 
   return (
-    <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-4">
-      <h3 className="text-xs font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">
+    <div className="rounded-xl bg-bg-card border border-border-card p-4">
+      <h3 className="text-xs font-semibold text-accent-gold mb-3 uppercase tracking-wider">
         Action Bar
       </h3>
       <div className="flex gap-2">
@@ -25,8 +25,8 @@ export function ActionBar() {
             key={slotNumber}
             className={`flex-1 rounded-lg border p-2 text-center min-h-[56px] flex flex-col items-center justify-center ${
               skill
-                ? "border-[#e5a91a]/30 bg-[#e5a91a]/5"
-                : "border-[#0f3460] border-dashed bg-[#0f3460]/20"
+                ? "border-accent-gold/30 bg-accent-gold/5"
+                : "border-border-card border-dashed bg-bg-input/20"
             }`}
           >
             {skill ? (
@@ -36,13 +36,13 @@ export function ActionBar() {
                 </span>
                 <button
                   onClick={() => removeFromBar(slotNumber)}
-                  className="text-xs text-zinc-500 hover:text-red-400 mt-1 transition-colors"
+                  className="text-xs text-text-muted hover:text-red-400 mt-1 transition-colors"
                 >
                   remove
                 </button>
               </>
             ) : (
-              <span className="text-xs text-zinc-600">{slotNumber}</span>
+              <span className="text-xs text-text-dim">{slotNumber}</span>
             )}
           </div>
         ))}

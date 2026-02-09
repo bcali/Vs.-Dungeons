@@ -8,6 +8,7 @@ import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/typ
 import type { Character, Ability, InventoryItem, CharacterSeals, StatKey } from "@/types/game";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkillTreePanel } from "@/components/character/skill-tree-panel";
+import { GameProgressBar } from "@/components/ui/game-progress-bar";
 
 export default function CharacterSheetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -65,7 +66,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
   if (loading || !char) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <span className="text-zinc-500 animate-pulse">Loading character...</span>
+        <span className="text-text-muted animate-pulse">Loading character...</span>
       </div>
     );
   }
@@ -83,14 +84,14 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
     <div className="min-h-screen p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/character" className="text-zinc-400 hover:text-white text-sm">&larr; Back</Link>
+          <Link href="/character" className="text-text-secondary hover:text-white text-sm">&larr; Back</Link>
           <h1 className="text-2xl font-bold">
-            <span className="text-[#e5a91a]">{char.heroName || "Hero"}</span>
-            <span className="text-zinc-400 ml-2">&mdash; Level {char.level} {profInfo?.name ?? ""}</span>
+            <span className="text-accent-gold">{char.heroName || "Hero"}</span>
+            <span className="text-text-secondary ml-2">&mdash; Level {char.level} {profInfo?.name ?? ""}</span>
           </h1>
         </div>
         <button onClick={handleSave} disabled={!dirty || saving}
-          className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${dirty ? 'bg-[#e5a91a] text-[#1a1a2e] hover:bg-[#e5a91a]/80' : 'bg-[#0f3460] text-zinc-500 cursor-default'}`}>
+          className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${dirty ? 'bg-accent-gold text-bg-page hover:bg-accent-gold/80' : 'bg-bg-input text-text-muted cursor-default'}`}>
           {saving ? "Saving..." : dirty ? "Save" : "Saved"}
         </button>
       </div>
@@ -98,29 +99,27 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
       <div className="grid grid-cols-5 gap-6 max-w-7xl mx-auto">
         <div className="col-span-2 space-y-6">
           {/* Identity */}
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-            <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Identity</h2>
+          <div className="rounded-xl bg-bg-card border border-border-card p-5">
+            <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">Identity</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-zinc-400">Name</span><span>{char.heroName || "TBD"}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-400">Player</span><span>{char.playerName || "TBD"}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-400">Profession</span><span>{profInfo?.name ?? "TBD"}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-400">Rank</span><span>{rankForLevel(char.level)}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-400">Gold</span><span className="text-[#e5a91a]">{char.gold}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">Name</span><span>{char.heroName || "TBD"}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">Player</span><span>{char.playerName || "TBD"}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">Profession</span><span>{profInfo?.name ?? "TBD"}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">Rank</span><span>{rankForLevel(char.level)}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">Gold</span><span className="text-accent-gold">{char.gold}</span></div>
               <div className="mt-3">
-                <div className="flex justify-between text-xs text-zinc-400 mb-1"><span>XP</span><span>{char.xp} / {nextXp === Infinity ? 'MAX' : nextXp}</span></div>
-                <div className="w-full h-2 bg-[#0f3460] rounded-full">
-                  <div className="h-full bg-[#e5a91a] rounded-full" style={{ width: `${nextXp === Infinity ? 100 : Math.round((char.xp / nextXp) * 100)}%` }} />
-                </div>
+                <div className="flex justify-between text-xs text-text-secondary mb-1"><span>XP</span><span>{char.xp} / {nextXp === Infinity ? 'MAX' : nextXp}</span></div>
+                <GameProgressBar value={nextXp === Infinity ? 100 : Math.round((char.xp / nextXp) * 100)} color="bg-xp-bar" />
               </div>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
+          <div className="rounded-xl bg-bg-card border border-border-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-[#e5a91a] uppercase tracking-wider">Stats</h2>
+              <h2 className="text-sm font-semibold text-accent-gold uppercase tracking-wider">Stats</h2>
               {char.unspentStatPoints > 0 && (
-                <span className="text-xs bg-[#e5a91a]/20 text-[#e5a91a] px-2 py-1 rounded-full animate-pulse">{char.unspentStatPoints} pts available</span>
+                <span className="text-xs bg-accent-gold/20 text-accent-gold px-2 py-1 rounded-full animate-pulse">{char.unspentStatPoints} pts available</span>
               )}
             </div>
             <div className="space-y-3">
@@ -132,19 +131,17 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                 const gearB = char.gearBonus[key];
                 return (
                   <div key={key} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-zinc-400 w-8">{label.abbr}</span>
+                    <span className="text-xs font-bold text-text-secondary w-8">{label.abbr}</span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => handleStatChange(key, -1)} disabled={baseVal <= 3}
-                        className="w-7 h-7 rounded bg-[#0f3460] text-zinc-400 hover:text-white text-sm flex items-center justify-center disabled:opacity-30">-</button>
+                        className="w-7 h-7 rounded bg-bg-input text-text-secondary hover:text-white text-sm flex items-center justify-center disabled:opacity-30">-</button>
                       <span className="text-lg font-bold w-6 text-center">{baseVal}</span>
                       <button onClick={() => handleStatChange(key, 1)} disabled={char.unspentStatPoints <= 0 || baseVal >= 15}
-                        className="w-7 h-7 rounded bg-[#0f3460] text-zinc-400 hover:text-white text-sm flex items-center justify-center disabled:opacity-30">+</button>
+                        className="w-7 h-7 rounded bg-bg-input text-text-secondary hover:text-white text-sm flex items-center justify-center disabled:opacity-30">+</button>
                     </div>
                     {gearB > 0 && <span className="text-xs text-green-400">+{gearB}</span>}
-                    <span className="text-xs text-zinc-500">({bonus >= 0 ? "+" : ""}{bonus})</span>
-                    <div className="flex-1 h-2 bg-[#0f3460] rounded-full">
-                      <div className="h-full bg-[#3b82f6] rounded-full transition-all" style={{ width: `${(totalVal / 15) * 100}%` }} />
-                    </div>
+                    <span className="text-xs text-text-muted">({bonus >= 0 ? "+" : ""}{bonus})</span>
+                    <GameProgressBar value={totalVal} max={15} color="bg-stat-bar" className="flex-1" />
                   </div>
                 );
               })}
@@ -152,28 +149,30 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
           </div>
 
           {/* Combat Stats */}
-          <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-            <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Combat</h2>
+          <div className="rounded-xl bg-bg-card border border-border-card p-5">
+            <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">Combat</h2>
             <div className="space-y-3">
               <div>
-                <div className="flex justify-between text-xs text-zinc-400 mb-1"><span>HP</span><span>{currentHp} / {hp}</span></div>
-                <div className="w-full h-3 bg-[#0f3460] rounded-full">
-                  <div className={`h-full rounded-full ${currentHp / hp > 0.5 ? 'bg-green-500' : currentHp / hp > 0.25 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                    style={{ width: `${(currentHp / hp) * 100}%` }} />
-                </div>
+                <div className="flex justify-between text-xs text-text-secondary mb-1"><span>HP</span><span>{currentHp} / {hp}</span></div>
+                <GameProgressBar
+                  value={Math.round((currentHp / hp) * 100)}
+                  color={currentHp / hp > 0.5 ? 'bg-hp-high' : currentHp / hp > 0.25 ? 'bg-hp-mid' : 'bg-hp-low'}
+                  height="sm"
+                />
               </div>
               {char.resourceType && (
                 <div>
-                  <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                  <div className="flex justify-between text-xs text-text-secondary mb-1">
                     <span className="capitalize">{char.resourceType}</span><span>{currentRes} / {mr}</span>
                   </div>
-                  <div className="w-full h-3 bg-[#0f3460] rounded-full">
-                    <div className={`h-full rounded-full ${char.resourceType === 'rage' ? 'bg-red-500' : char.resourceType === 'energy' ? 'bg-yellow-400' : 'bg-blue-500'}`}
-                      style={{ width: `${mr > 0 ? (currentRes / mr) * 100 : 0}%` }} />
-                  </div>
+                  <GameProgressBar
+                    value={mr > 0 ? Math.round((currentRes / mr) * 100) : 0}
+                    color={char.resourceType === 'rage' ? 'bg-resource-rage' : char.resourceType === 'energy' ? 'bg-resource-energy' : 'bg-resource-mana'}
+                    height="sm"
+                  />
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
+              <div className="grid grid-cols-2 gap-2 text-xs text-text-secondary">
                 <div>Movement: 6 studs</div>
                 <div>Melee Dmg: {ts.str}</div>
                 <div>Crit Range: {crit}+</div>
@@ -187,12 +186,12 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
 
         <div className="col-span-3">
           <Tabs defaultValue="sheet">
-            <TabsList className="bg-[#16213e] border border-[#0f3460] mb-4">
-              <TabsTrigger value="sheet" className="data-[state=active]:bg-[#0f3460] data-[state=active]:text-[#e5a91a]">
+            <TabsList className="bg-bg-card border border-border-card mb-4">
+              <TabsTrigger value="sheet" className="data-[state=active]:bg-bg-input data-[state=active]:text-accent-gold">
                 Sheet
               </TabsTrigger>
               {char.profession && PROFESSION_CLASS[char.profession] && (
-                <TabsTrigger value="skills" className="data-[state=active]:bg-[#0f3460] data-[state=active]:text-[#e5a91a]">
+                <TabsTrigger value="skills" className="data-[state=active]:bg-bg-input data-[state=active]:text-accent-gold">
                   Skills
                 </TabsTrigger>
               )}
@@ -200,21 +199,21 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
 
             <TabsContent value="sheet" className="space-y-6">
               {/* Abilities */}
-              <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-                <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Abilities ({abilities.length})</h2>
+              <div className="rounded-xl bg-bg-card border border-border-card p-5">
+                <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">Abilities ({abilities.length})</h2>
                 {abilities.length === 0 ? (
-                  <p className="text-zinc-500 text-sm italic">No abilities learned yet</p>
+                  <p className="text-text-muted text-sm italic">No abilities learned yet</p>
                 ) : (
                   <div className="space-y-2">
                     {abilities.map((ab) => (
-                      <div key={ab.id} className="flex items-start justify-between rounded-lg bg-[#0f3460]/50 px-4 py-3">
+                      <div key={ab.id} className="flex items-start justify-between rounded-lg bg-bg-input/50 px-4 py-3">
                         <div>
                           <p className="font-medium text-sm">{ab.name}</p>
-                          <p className="text-xs text-zinc-500 mt-0.5">{ab.description}</p>
+                          <p className="text-xs text-text-muted mt-0.5">{ab.description}</p>
                         </div>
                         <div className="text-right flex-shrink-0 ml-3">
-                          <span className="text-xs text-zinc-400">Tier {ab.tier}</span>
-                          {ab.resourceCost > 0 && <p className="text-xs text-zinc-500">{ab.resourceCost} {ab.resourceType}</p>}
+                          <span className="text-xs text-text-secondary">Tier {ab.tier}</span>
+                          {ab.resourceCost > 0 && <p className="text-xs text-text-muted">{ab.resourceCost} {ab.resourceType}</p>}
                         </div>
                       </div>
                     ))}
@@ -223,23 +222,23 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
               </div>
 
               {/* Inventory */}
-              <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-                <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Inventory</h2>
-                <div className="text-sm text-zinc-400">
-                  <div className="flex justify-between py-1 border-b border-[#0f3460]"><span>Gold Coins</span><span className="text-[#e5a91a]">{char.gold}</span></div>
+              <div className="rounded-xl bg-bg-card border border-border-card p-5">
+                <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">Inventory</h2>
+                <div className="text-sm text-text-secondary">
+                  <div className="flex justify-between py-1 border-b border-border-card"><span>Gold Coins</span><span className="text-accent-gold">{char.gold}</span></div>
                   {inventory.map((item) => (
-                    <div key={item.id} className="flex justify-between py-1 border-b border-[#0f3460]">
+                    <div key={item.id} className="flex justify-between py-1 border-b border-border-card">
                       <span>{item.itemName} {item.equipped && <span className="text-green-400 text-xs">(E)</span>}</span>
-                      <span className="text-zinc-500">x{item.quantity}</span>
+                      <span className="text-text-muted">x{item.quantity}</span>
                     </div>
                   ))}
-                  {inventory.length === 0 && <p className="text-zinc-500 text-sm italic mt-2">No items yet</p>}
+                  {inventory.length === 0 && <p className="text-text-muted text-sm italic mt-2">No items yet</p>}
                 </div>
               </div>
 
               {/* Seals */}
-              <div className="rounded-xl bg-[#16213e] border border-[#0f3460] p-5">
-                <h2 className="text-sm font-semibold text-[#e5a91a] mb-3 uppercase tracking-wider">Seal Collection</h2>
+              <div className="rounded-xl bg-bg-card border border-border-card p-5">
+                <h2 className="text-sm font-semibold text-accent-gold mb-3 uppercase tracking-wider">Seal Collection</h2>
                 <div className="flex gap-4 text-sm">
                   {[
                     { tier: 'Common', val: seals?.common ?? 0, bg: 'bg-green-900/40', border: 'border-green-500/30' },
@@ -250,7 +249,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                   ].map((s) => (
                     <div key={s.tier} className="text-center">
                       <div className={`w-8 h-8 rounded ${s.bg} border ${s.border} flex items-center justify-center text-xs font-bold`}>{s.val}</div>
-                      <span className="text-xs text-zinc-500 mt-1 block">{s.tier}</span>
+                      <span className="text-xs text-text-muted mt-1 block">{s.tier}</span>
                     </div>
                   ))}
                 </div>
