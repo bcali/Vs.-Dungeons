@@ -8,6 +8,7 @@ import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/typ
 import type { Character, Ability, InventoryItem, CharacterSeals, StatKey } from "@/types/game";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkillTreePanel } from "@/components/character/skill-tree-panel";
+import { ProfessionTreePanel } from "@/components/character/profession-tree-panel";
 import { GameProgressBar } from "@/components/ui/game-progress-bar";
 import { GameBackground } from "@/components/ui/game-background";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -192,6 +193,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
             {char.profession && PROFESSION_CLASS[char.profession] && (
               <TabsTrigger value="skills" className="data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Skills</TabsTrigger>
             )}
+            <TabsTrigger value="professions" className="data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Professions</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sheet">
@@ -411,6 +413,10 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
               <SkillTreePanel characterId={char.id} profession={char.profession} level={char.level} />
             </TabsContent>
           )}
+
+          <TabsContent value="professions">
+            <ProfessionTreePanel characterId={char.id} characterLevel={char.level} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>

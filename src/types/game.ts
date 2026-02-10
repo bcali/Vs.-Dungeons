@@ -203,3 +203,47 @@ export interface CatalogItem {
   description: string | null;
   effectJson: Record<string, unknown> | null;
 }
+
+// ─── Crafting Profession Ability Types ──────────────────────────────────
+
+export type CraftingProfession = 'blacksmithing' | 'alchemy' | 'cooking' | 'enchanting' | 'trap_making';
+
+export type ProfessionAbilityCategory = 'passive' | 'active' | 'unique_recipe' | 'mixed';
+
+export type ProfessionNodeType = 'auto' | 'choice';
+
+export type ProfessionNodeState = 'locked' | 'preview' | 'available' | 'unlocked';
+
+export interface ProfessionAbilityOption {
+  name: string;
+  category: ProfessionAbilityCategory;
+  icon: string;
+  description: string;
+  effect: string;
+}
+
+export interface ProfessionAbilityNode {
+  nodeNumber: number;
+  unlockLevel: number;
+  type: ProfessionNodeType;
+  options: ProfessionAbilityOption[];
+}
+
+export interface CraftingProfessionData {
+  id: CraftingProfession;
+  name: string;
+  icon: string;
+  description: string;
+  color: string;
+  nodes: ProfessionAbilityNode[];
+}
+
+export const CRAFTING_PROFESSIONS: CraftingProfession[] = ['blacksmithing', 'alchemy', 'cooking', 'enchanting', 'trap_making'];
+
+export const CRAFTING_PROFESSION_INFO: Record<CraftingProfession, { name: string; icon: string; description: string; color: string }> = {
+  blacksmithing: { name: 'Blacksmithing', icon: '\u2692\uFE0F', description: 'Forge weapons and armor', color: '#e74c3c' },
+  alchemy:       { name: 'Alchemy',       icon: '\u{1F9EA}', description: 'Brew potions and elixirs', color: '#9b59b6' },
+  cooking:       { name: 'Cooking',       icon: '\u{1F373}', description: 'Prepare meals and snacks', color: '#e67e22' },
+  enchanting:    { name: 'Enchanting',    icon: '\u2728',    description: 'Imbue gear with magic', color: '#3498db' },
+  trap_making:   { name: 'Trap Making',   icon: '\u{1FAA4}', description: 'Build traps and gadgets', color: '#2ecc71' },
+};

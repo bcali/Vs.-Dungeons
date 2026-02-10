@@ -1,7 +1,7 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot, CatalogItem } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 
 // ─── Row → App type mappers ────────────────────────────────────────────
@@ -584,5 +584,55 @@ export async function saveCombatRewards(combatId: string, rewardsJson: unknown):
     .from('combats')
     .update({ rewards_json: rewardsJson })
     .eq('id', combatId);
+  return !error;
+}
+
+// ─── Crafting Professions ──────────────────────────────────────────────
+
+export async function fetchCharacterCraftingProfessions(characterId: string): Promise<CraftingProfession[]> {
+  const { data, error } = await getSupabase()
+    .from('character_crafting_professions')
+    .select('profession')
+    .eq('character_id', characterId)
+    .order('created_at');
+  if (error || !data) return [];
+  return data.map((row: { profession: string }) => row.profession as CraftingProfession);
+}
+
+export async function addCharacterCraftingProfession(characterId: string, profession: CraftingProfession): Promise<boolean> {
+  const { error } = await getSupabase()
+    .from('character_crafting_professions')
+    .insert({ character_id: characterId, profession });
+  return !error;
+}
+
+export async function fetchProfessionChoices(characterId: string, profession: CraftingProfession): Promise<Record<number, number>> {
+  const { data, error } = await getSupabase()
+    .from('character_profession_choices')
+    .select('node_number, selected_option')
+    .eq('character_id', characterId)
+    .eq('profession', profession);
+  if (error || !data) return {};
+  const choices: Record<number, number> = {};
+  for (const row of data) {
+    choices[row.node_number] = row.selected_option;
+  }
+  return choices;
+}
+
+export async function saveProfessionChoice(
+  characterId: string,
+  profession: CraftingProfession,
+  nodeNumber: number,
+  selectedOption: number
+): Promise<boolean> {
+  const { error } = await getSupabase()
+    .from('character_profession_choices')
+    .upsert({
+      character_id: characterId,
+      profession,
+      node_number: nodeNumber,
+      selected_option: selectedOption,
+    }, { onConflict: 'character_id,profession,node_number' });
   return !error;
 }
