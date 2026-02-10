@@ -277,9 +277,51 @@ export interface CharacterMaterial {
 }
 
 export interface LootDrop {
-  tier: string;
-  category: string;
+  tier: MaterialTier | 'gold';
+  category?: MaterialCategory | 'any';
   qty: number;
+}
+
+export interface LootTableRow {
+  id: string;
+  levelMin: number;
+  levelMax: number;
+  isBoss: boolean;
+  rollMin: number;
+  rollMax: number;
+  drops: LootDrop[];
+  description: string | null;
+}
+
+export interface EnemyLootRoll {
+  enemyName: string;
+  enemyLevel: number;
+  isBoss: boolean;
+  d20Roll: number;
+  drops: ResolvedDrop[];
+}
+
+export interface ResolvedDrop {
+  material: Material;
+  quantity: number;
+}
+
+export interface EncounterLootResult {
+  encounterName: string;
+  rolls: EnemyLootRoll[];
+  totalDrops: ResolvedDrop[];
+  goldEarned: number;
+}
+
+export interface CharacterInventoryItem {
+  characterId: string;
+  materialId: string;
+  quantity: number;
+  materialName: string;
+  category: MaterialCategory;
+  tier: MaterialTier;
+  icon: string | null;
+  legoToken: string | null;
 }
 
 export interface EncounterLootEntry {
@@ -293,6 +335,31 @@ export interface EncounterLootEntry {
   source: LootSource;
   createdAt: string;
 }
+
+export interface DefeatedEnemy {
+  name: string;
+  level: number;
+  isBoss: boolean;
+}
+
+export interface LootAssignment {
+  characterId: string;
+  materials: ResolvedDrop[];
+  gold: number;
+}
+
+export interface LootEngineCache {
+  materials: Material[];
+  lootTables: LootTableRow[];
+}
+
+export const TIER_ORDER: Record<MaterialTier, number> = {
+  legendary: 1,
+  epic: 2,
+  rare: 3,
+  uncommon: 4,
+  common: 5,
+};
 
 export const TIER_COLORS: Record<MaterialTier, string> = {
   common:    '#22c55e',
