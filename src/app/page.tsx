@@ -144,13 +144,17 @@ export default function Home() {
               </motion.div>
             </div>
 
-            <div className="mt-8 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 inline-block">
-              <p className="text-white text-xl md:text-2xl font-black tracking-wide drop-shadow-md">
-                Build your heroes. Fight the monsters.{" "}
-                <br />
-                <span className="text-lego-yellow">Save the realm.</span>
-              </p>
-            </div>
+            <p
+              className="mt-4 text-xl md:text-3xl font-black tracking-wide italic transform -skew-x-6 uppercase"
+              style={{
+                textShadow: "3px 3px 0px #000, -1px -1px 0 #000, 0px 0px 10px rgba(0,0,0,0.8)",
+                WebkitTextStroke: "1.5px black",
+              }}
+            >
+              <span className="text-white">Build your heroes. Fight the monsters.</span>
+              <br />
+              <span className="text-lego-yellow">Save the realm.</span>
+            </p>
           </motion.div>
         </div>
 
