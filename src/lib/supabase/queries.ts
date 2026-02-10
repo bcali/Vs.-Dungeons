@@ -1,7 +1,7 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 
 // ─── Row → App type mappers ────────────────────────────────────────────
@@ -634,5 +634,100 @@ export async function saveProfessionChoice(
       node_number: nodeNumber,
       selected_option: selectedOption,
     }, { onConflict: 'character_id,profession,node_number' });
+  return !error;
+}
+
+// ─── Materials & Loot ──────────────────────────────────────────────────
+
+export async function fetchMaterials(): Promise<Material[]> {
+  const { data, error } = await getSupabase()
+    .from('materials')
+    .select('*')
+    .order('tier')
+    .order('category')
+    .order('name');
+  if (error || !data) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    tier: row.tier,
+    icon: row.icon,
+    legoToken: row.lego_token,
+    dropLevelMin: row.drop_level_min,
+    description: row.description,
+  }));
+}
+
+export async function fetchCharacterMaterials(characterId: string): Promise<CharacterMaterial[]> {
+  const { data, error } = await getSupabase()
+    .from('character_inventory_view')
+    .select('*')
+    .eq('character_id', characterId);
+  if (error || !data) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((row: any) => ({
+    characterId: row.character_id,
+    materialId: row.material_id,
+    quantity: row.quantity,
+    materialName: row.material_name,
+    category: row.category,
+    tier: row.tier,
+    icon: row.icon,
+    legoToken: row.lego_token,
+  }));
+}
+
+export async function addCharacterMaterial(
+  characterId: string,
+  materialId: string,
+  quantity: number = 1
+): Promise<boolean> {
+  const { error } = await getSupabase()
+    .rpc('add_character_material', {
+      p_character_id: characterId,
+      p_material_id: materialId,
+      p_quantity: quantity,
+    });
+  if (error) { console.error('add_character_material error:', error.message); return false; }
+  return true;
+}
+
+export async function getLootDrops(
+  enemyLevel: number,
+  isBoss: boolean,
+  roll: number
+): Promise<unknown[]> {
+  const { data, error } = await getSupabase()
+    .rpc('get_loot_drops', {
+      p_enemy_level: enemyLevel,
+      p_is_boss: isBoss,
+      p_roll: roll,
+    });
+  if (error) { console.error('get_loot_drops error:', error.message); return []; }
+  return Array.isArray(data) ? data : (data ? [data] : []);
+}
+
+export async function logEncounterLoot(
+  characterId: string,
+  materialId: string,
+  quantity: number,
+  rollValue: number | null,
+  source: string = 'combat',
+  encounterName?: string,
+  sessionId?: string
+): Promise<boolean> {
+  const { error } = await getSupabase()
+    .from('encounter_loot')
+    .insert({
+      character_id: characterId,
+      material_id: materialId,
+      quantity,
+      roll_value: rollValue,
+      source,
+      encounter_name: encounterName ?? null,
+      session_id: sessionId ?? null,
+    });
   return !error;
 }

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { use, useEffect, useState, useCallback } from "react";
-import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals } from "@/lib/supabase/queries";
+import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials } from "@/lib/supabase/queries";
 import { maxHp, maxResource, totalStats, totalStat, statBonus, critRange, xpForLevel, rankForLevel } from "@/lib/game/stats";
 import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/types/game";
-import type { Character, Ability, InventoryItem, CharacterSeals, StatKey } from "@/types/game";
+import type { Character, Ability, InventoryItem, CharacterSeals, CharacterMaterial, StatKey } from "@/types/game";
+import { TIER_COLORS, CATEGORY_ICONS } from "@/types/game";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkillTreePanel } from "@/components/character/skill-tree-panel";
 import { ProfessionTreePanel } from "@/components/character/profession-tree-panel";
@@ -58,22 +59,25 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
   const [abilities, setAbilities] = useState<(Ability & { learnedAtLevel: number })[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [seals, setSeals] = useState<CharacterSeals | null>(null);
+  const [materials, setMaterials] = useState<CharacterMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [c, ab, inv, s] = await Promise.all([
+    const [c, ab, inv, s, mats] = await Promise.all([
       fetchCharacter(id),
       fetchCharacterAbilities(id),
       fetchInventory(id),
       fetchSeals(id),
+      fetchCharacterMaterials(id),
     ]);
     setChar(c);
     setAbilities(ab);
     setInventory(inv);
     setSeals(s);
+    setMaterials(mats);
     setLoading(false);
     setDirty(false);
   }, [id]);
@@ -404,6 +408,43 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                     </div>
                   </div>
                 </GlassPanel>
+
+                {/* Crafting Materials */}
+                <GlassPanel title={`MATERIALS (${materials.length})`} colorToken={colorToken} delay={250}>
+                  {materials.length === 0 ? (
+                    <div>
+                      <p className="text-text-secondary text-sm">{"\u26CF\uFE0F"} No materials yet!</p>
+                      <p className="text-xs text-text-muted mt-1">Defeat enemies and explore to find crafting materials.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(['legendary', 'epic', 'rare', 'uncommon', 'common'] as const).map((tier) => {
+                        const tierMats = materials.filter((m) => m.tier === tier);
+                        if (tierMats.length === 0) return null;
+                        return (
+                          <div key={tier}>
+                            <p className="text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: TIER_COLORS[tier] }}>
+                              {tier}
+                            </p>
+                            <div className="space-y-1">
+                              {tierMats.map((m) => (
+                                <div key={m.materialId} className="flex items-center justify-between py-1 rounded-md px-2 bg-white/3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{m.icon || CATEGORY_ICONS[m.category]}</span>
+                                    <span className="text-sm text-text-secondary">{m.materialName}</span>
+                                  </div>
+                                  <span className="text-sm font-bold" style={{ color: TIER_COLORS[tier] }}>&times;{m.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="pt-2 border-t border-white/5 text-xs text-text-muted">
+                        Total: {materials.reduce((s, m) => s + m.quantity, 0)} items across {materials.length} types
+                      </div>
+                    </div>
+                  )}</GlassPanel>
               </div>
             </div>
           </TabsContent>

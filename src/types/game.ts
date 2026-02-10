@@ -247,3 +247,65 @@ export const CRAFTING_PROFESSION_INFO: Record<CraftingProfession, { name: string
   enchanting:    { name: 'Enchanting',    icon: '\u2728',    description: 'Imbue gear with magic', color: '#3498db' },
   trap_making:   { name: 'Trap Making',   icon: '\u{1FAA4}', description: 'Build traps and gadgets', color: '#2ecc71' },
 };
+
+// ─── Materials & Loot Types ─────────────────────────────────────────────
+
+export type MaterialCategory = 'metal' | 'herb' | 'monster_part' | 'arcane' | 'seal';
+export type MaterialTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+export type LootSource = 'combat' | 'puzzle' | 'chest' | 'exploration' | 'boss' | 'manual';
+
+export interface Material {
+  id: string;
+  name: string;
+  category: MaterialCategory;
+  tier: MaterialTier;
+  icon: string | null;
+  legoToken: string | null;
+  dropLevelMin: number;
+  description: string | null;
+}
+
+export interface CharacterMaterial {
+  characterId: string;
+  materialId: string;
+  quantity: number;
+  materialName: string;
+  category: MaterialCategory;
+  tier: MaterialTier;
+  icon: string | null;
+  legoToken: string | null;
+}
+
+export interface LootDrop {
+  tier: string;
+  category: string;
+  qty: number;
+}
+
+export interface EncounterLootEntry {
+  id: string;
+  sessionId: string | null;
+  encounterName: string | null;
+  characterId: string | null;
+  materialId: string | null;
+  quantity: number;
+  rollValue: number | null;
+  source: LootSource;
+  createdAt: string;
+}
+
+export const TIER_COLORS: Record<MaterialTier, string> = {
+  common:    '#22c55e',
+  uncommon:  '#3b82f6',
+  rare:      '#eab308',
+  epic:      '#a855f7',
+  legendary: '#ef4444',
+};
+
+export const CATEGORY_ICONS: Record<MaterialCategory, string> = {
+  metal:        '\u26CF\uFE0F',
+  herb:         '\u{1F33F}',
+  monster_part: '\u{1F9B4}',
+  arcane:       '\u2728',
+  seal:         '\u{1F52E}',
+};
