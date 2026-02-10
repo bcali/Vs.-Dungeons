@@ -9,6 +9,7 @@ import { rollInitiative } from "@/lib/game/combat";
 import { useCombatStore } from "@/stores/combat-store";
 import type { Character, Monster, Campaign } from "@/types/game";
 import type { CombatParticipant } from "@/types/combat";
+import { GameBackground } from "@/components/ui/game-background";
 
 export default function EncounterSetupPage() {
   const router = useRouter();
@@ -129,11 +130,13 @@ export default function EncounterSetupPage() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen relative">
+      <GameBackground className="fixed inset-0 z-0" />
+      <div className="relative z-10 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/combat" className="text-text-secondary hover:text-white text-sm">&larr; Back</Link>
-          <h1 className="text-2xl font-bold text-accent-red">NEW ENCOUNTER</h1>
+          <Link href="/combat" className="text-text-secondary hover:text-text-primary text-sm transition-colors">&larr; Back</Link>
+          <h1 className="text-base md:text-lg text-text-title tracking-wide">NEW ENCOUNTER</h1>
         </div>
         <button
           onClick={handleStartCombat}
@@ -263,6 +266,7 @@ export default function EncounterSetupPage() {
             Roll Initiative &amp; Start Combat
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

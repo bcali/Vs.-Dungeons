@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-exo2);
+  --font-mono: var(--font-press-start);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -83,6 +83,33 @@
   --color-lego-green: var(--lego-green);
   --color-lego-panel: var(--lego-panel);
   --color-lego-border: var(--lego-border);
+
+  /* Profession colors */
+  --color-prof-knight: var(--prof-knight);
+  --color-prof-knight-accent: var(--prof-knight-accent);
+  --color-prof-rogue: var(--prof-rogue);
+  --color-prof-rogue-accent: var(--prof-rogue-accent);
+  --color-prof-wizard: var(--prof-wizard);
+  --color-prof-wizard-accent: var(--prof-wizard-accent);
+  --color-prof-healer: var(--prof-healer);
+  --color-prof-healer-accent: var(--prof-healer-accent);
+  --color-prof-ranger: var(--prof-ranger);
+  --color-prof-ranger-accent: var(--prof-ranger-accent);
+  --color-prof-inventor: var(--prof-inventor);
+  --color-prof-inventor-accent: var(--prof-inventor-accent);
+
+  /* Extra UI tokens */
+  --color-bg-deep: var(--bg-deep);
+  --color-bg-surface: var(--bg-surface);
+  --color-text-gold: var(--text-gold);
+  --color-text-title: var(--text-title);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-border-glow: var(--border-glow);
+
+  /* Font families */
+  --font-display: var(--font-press-start);
+  --font-body: var(--font-exo2);
 }
 
 :root {
@@ -121,68 +148,89 @@
 }
 
 .dark {
-  /* shadcn overrides — game palette */
-  --background: #1A1A2E;
-  --foreground: #FFFFFF;
-  --card: #16213E;
-  --card-foreground: #FFFFFF;
-  --popover: #16213E;
-  --popover-foreground: #FFFFFF;
-  --primary: #E5A91A;
-  --primary-foreground: #1A1A2E;
-  --secondary: #0F3460;
-  --secondary-foreground: #FFFFFF;
-  --muted: #0F3460;
-  --muted-foreground: #71717A;
-  --accent: #0F3460;
-  --accent-foreground: #FFFFFF;
-  --destructive: #E94560;
-  --border: #0F3460;
-  --input: #0F3460;
-  --ring: rgba(229, 169, 26, 0.3);
-  --chart-1: #E5A91A;
-  --chart-2: #E94560;
-  --chart-3: #3B82F6;
-  --chart-4: #22C55E;
-  --chart-5: #A855F7;
-  --sidebar: #16213E;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #E5A91A;
-  --sidebar-primary-foreground: #1A1A2E;
-  --sidebar-accent: #0F3460;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #0F3460;
-  --sidebar-ring: rgba(229, 169, 26, 0.3);
+  /* shadcn overrides — deep purple game palette */
+  --background: #0d0221;
+  --foreground: #f0e6ff;
+  --card: #1a0a3e;
+  --card-foreground: #f0e6ff;
+  --popover: #1a0a3e;
+  --popover-foreground: #f0e6ff;
+  --primary: #ffd700;
+  --primary-foreground: #0d0221;
+  --secondary: #261454;
+  --secondary-foreground: #f0e6ff;
+  --muted: #261454;
+  --muted-foreground: #8b7aaa;
+  --accent: #261454;
+  --accent-foreground: #f0e6ff;
+  --destructive: #e74c3c;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: #261454;
+  --ring: rgba(255, 204, 0, 0.3);
+  --chart-1: #ffd700;
+  --chart-2: #e74c3c;
+  --chart-3: #3498db;
+  --chart-4: #2ecc71;
+  --chart-5: #8e44ad;
+  --sidebar: #1a0a3e;
+  --sidebar-foreground: #f0e6ff;
+  --sidebar-primary: #ffd700;
+  --sidebar-primary-foreground: #0d0221;
+  --sidebar-accent: #261454;
+  --sidebar-accent-foreground: #f0e6ff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(255, 204, 0, 0.3);
 
-  /* Game design tokens */
-  --bg-page: #1A1A2E;
-  --bg-card: #16213E;
-  --bg-input: #0F3460;
-  --accent-gold: #E5A91A;
-  --accent-red: #E94560;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --text-dim: #52525B;
-  --border-card: #0F3460;
-  --border-active-gold: rgba(229, 169, 26, 0.3);
-  --border-active-green: #22C55E;
-  --border-active-red: #EF4444;
-  --hp-high: #22C55E;
-  --hp-mid: #EAB308;
-  --hp-low: #EF4444;
-  --resource-rage: #EF4444;
-  --resource-energy: #FACC15;
-  --resource-mana: #3B82F6;
-  --stat-bar: #3B82F6;
-  --xp-bar: #E5A91A;
-  --branch-protection: #3B82F6;
-  --branch-arms: #EF4444;
-  --branch-warrior-core: #A855F7;
+  /* Game design tokens — deep purple */
+  --bg-page: #0d0221;
+  --bg-card: #1a0a3e;
+  --bg-input: #261454;
+  --bg-deep: #0d0221;
+  --bg-surface: #261454;
+  --accent-gold: #ffd700;
+  --accent-red: #e74c3c;
+  --text-primary: #f0e6ff;
+  --text-secondary: #8b7aaa;
+  --text-muted: #6b5a8a;
+  --text-dim: #4a3a6a;
+  --text-gold: #ffd700;
+  --text-title: #ffcc00;
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-active-gold: rgba(255, 204, 0, 0.3);
+  --border-active-green: #2ecc71;
+  --border-active-red: #e74c3c;
+  --border-glow: rgba(255, 204, 0, 0.3);
+  --card-bg: rgba(26, 10, 62, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --hp-high: #2ecc71;
+  --hp-mid: #f1c40f;
+  --hp-low: #e74c3c;
+  --resource-rage: #c0392b;
+  --resource-energy: #f1c40f;
+  --resource-mana: #9b59b6;
+  --stat-bar: #3498db;
+  --xp-bar: #3498db;
+  --branch-protection: #3498db;
+  --branch-arms: #e74c3c;
+  --branch-warrior-core: #8e44ad;
   --branch-shadow: #6366F1;
-  --branch-precision: #22C55E;
+  --branch-precision: #2ecc71;
   --branch-survival: #84CC16;
-  --branch-rogue-core: #A855F7;
+  --branch-rogue-core: #8e44ad;
+
+  /* Profession colors */
+  --prof-knight: #c0392b;
+  --prof-knight-accent: #f1c40f;
+  --prof-rogue: #1abc9c;
+  --prof-rogue-accent: #2c3e50;
+  --prof-wizard: #8e44ad;
+  --prof-wizard-accent: #3498db;
+  --prof-healer: #f39c12;
+  --prof-healer-accent: #ecf0f1;
+  --prof-ranger: #27ae60;
+  --prof-ranger-accent: #e67e22;
+  --prof-inventor: #d35400;
+  --prof-inventor-accent: #95a5a6;
 
   /* LEGO launcher tokens */
   --lego-red: #E3000B;
@@ -199,5 +247,67 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-exo2), ui-sans-serif, system-ui, sans-serif;
   }
+  h1, h2, h3, .section-title {
+    font-family: var(--font-press-start), monospace;
+  }
+}
+
+/* Game background animations */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes float-drift {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.3; }
+  50% { transform: translateY(-50vh) rotate(20deg); opacity: 0.5; }
+  90% { opacity: 0.2; }
+  100% { transform: translateY(-110vh) rotate(40deg); opacity: 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(var(--glow-rgb, 255 204 0), 0.3); }
+  50% { box-shadow: 0 0 25px rgba(var(--glow-rgb, 255 204 0), 0.6); }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.animate-float-drift {
+  animation: float-drift linear infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.5s ease-out both;
+}
+
+@keyframes avatar-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.animate-avatar-bob {
+  animation: avatar-bob 3s ease-in-out infinite;
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 3s ease-in-out infinite;
 }

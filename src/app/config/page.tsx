@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useConfigStore } from "@/stores/config-store";
 import { fetchGameConfig, saveGameConfig } from "@/lib/supabase/queries";
 import type { GameConfig } from "@/types/config";
+import { GameBackground } from "@/components/ui/game-background";
 
 type Tab = 'stats' | 'resources' | 'combat' | 'leveling' | 'loot' | 'abilities';
 const TABS: { key: Tab; label: string }[] = [
@@ -52,11 +53,13 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen relative">
+      <GameBackground className="fixed inset-0 z-0" />
+      <div className="relative z-10 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-text-secondary hover:text-white text-sm">&larr; Home</Link>
-          <h1 className="text-2xl font-bold text-accent-gold">GAME CONFIGURATION</h1>
+          <Link href="/" className="text-text-secondary hover:text-text-primary text-sm transition-colors">&larr; Home</Link>
+          <h1 className="text-base md:text-lg text-text-title tracking-wide">GAME CONFIG</h1>
         </div>
         <div className="flex gap-3">
           <button onClick={handleReset} className="rounded-lg bg-bg-input px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors">
@@ -88,6 +91,7 @@ export default function ConfigPage() {
         {activeTab === 'leveling' && <LevelingTab config={config} />}
         {activeTab === 'loot' && <LootTab config={config} />}
         {activeTab === 'abilities' && <AbilitiesTab config={config} />}
+      </div>
       </div>
     </div>
   );
