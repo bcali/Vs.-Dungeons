@@ -311,3 +311,50 @@
 .animate-bounce-gentle {
   animation: bounce-gentle 3s ease-in-out infinite;
 }
+
+/* Battle results animations */
+@keyframes battle-slide-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes banner-glow {
+  0%, 100% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+  50% { text-shadow: 0 0 25px rgba(255, 215, 0, 0.6), 0 0 50px rgba(255, 215, 0, 0.2); }
+}
+
+@keyframes level-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes crit-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.animate-battle-slide-down {
+  animation: battle-slide-down 0.6s ease;
+}
+
+.animate-banner-glow {
+  animation: banner-glow 2s ease infinite;
+}
+
+.animate-level-pulse {
+  animation: level-pulse 0.6s ease;
+}
+
+.animate-crit-flash {
+  animation: crit-flash 1s ease infinite;
+}
+
+.animate-confetti-fall {
+  animation: confetti-fall 2s ease forwards;
+}
