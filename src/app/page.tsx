@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { LegoBattleBackground } from "@/components/ui/lego-battle-background";
+import { ExplorationBackground } from "@/components/ui/exploration-background";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
@@ -20,9 +20,9 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-bg-page text-white overflow-hidden font-sans selection:bg-accent-gold selection:text-black">
       {/* --- Left Sidebar (Launcher Style) --- */}
-      <div className="w-20 md:w-64 flex-shrink-0 bg-lego-panel border-r border-lego-border flex flex-col z-20">
+      <div className="w-20 md:w-64 flex-shrink-0 bg-card-bg/80 backdrop-blur-xl border-r border-card-border flex flex-col z-20">
         {/* User Profile Stub */}
-        <div className="p-4 flex items-center gap-3 border-b border-lego-border">
+        <div className="p-4 flex items-center gap-3 border-b border-card-border">
           <div className="w-10 h-10 rounded-md bg-accent-gold flex items-center justify-center text-black font-bold text-xl shrink-0 border-2 border-white/10 shadow-lg">
             GM
           </div>
@@ -48,7 +48,7 @@ export default function Home() {
             isActive={activeTab === "news"}
             onClick={() => setActiveTab("news")}
           />
-          <div className="my-4 border-t border-lego-border" />
+          <div className="my-4 border-t border-card-border" />
           <Link href="/character">
             <SidebarItem icon={Users} label="My Heroes" isActive={false} />
           </Link>
@@ -58,11 +58,11 @@ export default function Home() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-lego-border">
+        <div className="p-4 border-t border-card-border">
           <Link href="/config">
             <SidebarItem icon={Settings} label="Settings" isActive={false} />
           </Link>
-          <div className="mt-4 hidden md:block text-[10px] text-text-dim text-center font-mono">
+          <div className="mt-4 hidden md:block text-[10px] text-text-dim text-center font-mono tracking-wider">
             Vs. Dungeons Launcher v1.4.2
           </div>
         </div>
@@ -71,12 +71,12 @@ export default function Home() {
       {/* --- Main Content Area --- */}
       <div className="flex-1 relative flex flex-col min-w-0 bg-bg-page">
         {/* Background */}
-        <LegoBattleBackground className="absolute inset-0 z-0" />
+        <ExplorationBackground className="absolute inset-0 z-0" />
 
         {/* Top Bar */}
         <div className="relative z-10 p-6 flex justify-between items-start">
           <div className="flex gap-4">
-            <span className="text-xs font-black text-white uppercase tracking-widest px-3 py-1.5 rounded bg-lego-red border-b-4 border-red-900 shadow-lg transform rotate-[-2deg]">
+            <span className="text-xs font-black text-white uppercase tracking-widest px-3 py-1.5 rounded bg-lego-red border-b-4 border-red-900 shadow-lg transform rotate-[-2deg] font-mono">
               Season 4: Blocky Realms
             </span>
           </div>
@@ -159,7 +159,7 @@ export default function Home() {
         </div>
 
         {/* Bottom Play Bar */}
-        <div className="relative z-20 bg-lego-panel border-t-4 border-black p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+        <div className="relative z-20 bg-card-bg/90 backdrop-blur-xl border-t-4 border-card-border p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="hidden md:block w-16 h-16 bg-lego-blue rounded-md border-b-4 border-blue-900 relative overflow-hidden group cursor-pointer shadow-lg transform transition-transform hover:-translate-y-1">
               <div className="absolute inset-0 flex items-center justify-center">
@@ -167,7 +167,7 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h3 className="text-white font-black text-xl tracking-wide">
+              <h3 className="text-white font-black text-xl tracking-wide font-mono">
                 Vs. Dungeons
               </h3>
               <div className="flex items-center gap-2 text-sm text-text-muted font-bold">
@@ -223,17 +223,17 @@ function SidebarItem({
       className={cn(
         "group flex items-center gap-3 px-3 py-3 rounded-md cursor-pointer transition-all font-bold",
         isActive
-          ? "bg-bg-input text-white border-l-4 border-lego-yellow"
+          ? "bg-bg-input text-white border-l-4 border-accent-gold"
           : "text-text-muted hover:text-white hover:bg-bg-card"
       )}
     >
       <Icon
         className={cn(
           "w-5 h-5 transition-transform group-hover:scale-110",
-          isActive && "text-lego-yellow"
+          isActive && "text-accent-gold"
         )}
       />
-      <span className="hidden md:block text-sm">{label}</span>
+      <span className="hidden md:block text-sm font-mono uppercase tracking-wider">{label}</span>
     </div>
   );
 }
