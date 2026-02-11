@@ -10,6 +10,12 @@ import { useSpellSlots, restoreAllSlots } from '@/lib/game/spell-slots';
 import { saveQueue } from '@/lib/utils/save-queue';
 import { getSupabase } from '@/lib/supabase/client';
 
+interface PreCombatHero {
+  characterId: string;
+  currentHp: number;
+  spellSlotsUsed: number;
+}
+
 interface CombatState {
   combatId: string | null;
   encounterName: string;
@@ -19,6 +25,7 @@ interface CombatState {
   initiativeOrder: string[];
   currentTurnIndex: number;
   actionLog: ActionLogEntry[];
+  preCombatSnapshot: PreCombatHero[];
 
   // Actions
   initCombat: (encounterName: string, participants: CombatParticipant[], initiativeOrder: string[]) => void;
@@ -35,6 +42,7 @@ interface CombatState {
   useHeroSurge: (participantId: string) => void;
   addLogEntry: (entry: Omit<ActionLogEntry, 'id' | 'timestamp'>) => void;
   getParticipant: (id: string) => CombatParticipant | undefined;
+  abandonCombat: () => void;
   endCombat: () => void;
   enterRewardsPhase: () => void;
   resetCombat: () => void;
@@ -54,6 +62,7 @@ export const useCombatStore = create<CombatState>()(
       initiativeOrder: [],
       currentTurnIndex: 0,
       actionLog: [],
+      preCombatSnapshot: [],
 
       initCombat: (encounterName, participants, initiativeOrder) => {
         set({
@@ -65,6 +74,9 @@ export const useCombatStore = create<CombatState>()(
           initiativeOrder,
           currentTurnIndex: 0,
           actionLog: [],
+          preCombatSnapshot: participants
+            .filter(p => p.team === 'hero' && p.characterId)
+            .map(p => ({ characterId: p.characterId!, currentHp: p.currentHp, spellSlotsUsed: p.spellSlotsUsed })),
         });
       },
 
@@ -195,6 +207,40 @@ export const useCombatStore = create<CombatState>()(
         return get().participants.find(p => p.id === id);
       },
 
+      abandonCombat: () => {
+        const { preCombatSnapshot, combatId } = get();
+
+        // Restore each hero's HP/spell slots to pre-combat values
+        for (const hero of preCombatSnapshot) {
+          saveQueue.save(`hero-hp-${hero.characterId}`, async () => {
+            const supabase = getSupabase();
+            const { error } = await supabase
+              .from('characters')
+              .update({
+                current_hp: hero.currentHp,
+                spell_slots_used: hero.spellSlotsUsed,
+              })
+              .eq('id', hero.characterId);
+            if (error) throw error;
+          });
+        }
+
+        // Mark combat as abandoned in DB
+        if (combatId) {
+          saveQueue.save(`combat-meta-${combatId}`, async () => {
+            const supabase = getSupabase();
+            const { error } = await supabase
+              .from('combats')
+              .update({ status: 'abandoned' })
+              .eq('id', combatId);
+            if (error) throw error;
+          });
+        }
+
+        // Reset store
+        get().resetCombat();
+      },
+
       enterRewardsPhase: () => {
         set({ status: 'rewards' });
         get().persistCombatSnapshot();
@@ -216,6 +262,7 @@ export const useCombatStore = create<CombatState>()(
           initiativeOrder: [],
           currentTurnIndex: 0,
           actionLog: [],
+          preCombatSnapshot: [],
         });
       },
 
@@ -292,6 +339,7 @@ export const useCombatStore = create<CombatState>()(
         initiativeOrder: state.initiativeOrder,
         currentTurnIndex: state.currentTurnIndex,
         actionLog: state.actionLog,
+        preCombatSnapshot: state.preCombatSnapshot,
       }),
     }
   )

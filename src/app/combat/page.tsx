@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useCombatStore } from "@/stores/combat-store";
 import { isActionResponse } from "@/lib/claude/action-parser";
 import { isSpeechRecognitionSupported, createSpeechRecognition } from "@/lib/voice/speech-recognition";
 import { speakNarration, stopNarration } from "@/lib/voice/speech-synthesis";
 import { RewardsScreen } from "@/components/combat/rewards-screen";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import type { VoiceState } from "@/lib/voice/speech-recognition";
 import type { ClaudeResponse, ActiveStatusEffect } from "@/types/combat";
 
@@ -17,10 +21,12 @@ export default function CombatTrackerPage() {
     currentTurnIndex, actionLog,
     advanceTurn, applyDamage, applyHealing, applyStatusEffect,
     removeEffect, tickParticipantEffects, useSpellSlot,
-    setDefending, markAbilityUsed, addLogEntry, endCombat, enterRewardsPhase, resetCombat,
+    setDefending, markAbilityUsed, addLogEntry, abandonCombat, endCombat, enterRewardsPhase, resetCombat,
   } = useCombatStore();
 
+  const router = useRouter();
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [typedInput, setTypedInput] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -253,6 +259,9 @@ export default function CombatTrackerPage() {
           <button onClick={enterRewardsPhase} className="rounded-lg bg-bg-input px-3 py-1 text-xs text-text-secondary hover:text-white transition-colors">
             End Combat
           </button>
+          <button onClick={() => setShowLeaveDialog(true)} className="rounded-lg bg-bg-input px-3 py-1 text-xs text-red-400 hover:text-red-300 transition-colors">
+            Leave Battle
+          </button>
         </div>
       </div>
 
@@ -410,6 +419,32 @@ export default function CombatTrackerPage() {
           )}
         </div>
       </div>
+
+      {/* Leave Battle Confirmation */}
+      <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <DialogContent className="bg-bg-card border-border-card sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-accent-gold">Leave Battle?</DialogTitle>
+            <DialogDescription className="text-text-secondary">
+              All combat progress will be lost. No rewards will be given. Characters will be restored to their pre-combat state.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              onClick={() => setShowLeaveDialog(false)}
+              className="rounded-lg bg-bg-input px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { abandonCombat(); router.push('/combat/setup'); }}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 transition-colors"
+            >
+              Leave Battle
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
