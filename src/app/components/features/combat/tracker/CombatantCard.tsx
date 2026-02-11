@@ -120,7 +120,9 @@ export const CombatantCard: React.FC<CombatantCardProps> = ({ combatant, isCurre
                                             hasResource ? "text-blue-400" : "text-red-500 font-bold"
                                         )}>
                                             {ability.cost > 0 ? (
-                                                <span>{ability.cost} {combatant.resource?.type.slice(0,2).toUpperCase()}</span>
+                                                <span>
+                                                  {ability.cost} {combatant.resource ? combatant.resource.type.slice(0, 2).toUpperCase() : ""}
+                                                </span>
                                             ) : (
                                                 <span className="text-zinc-500">-</span>
                                             )}
