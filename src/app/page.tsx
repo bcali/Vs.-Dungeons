@@ -177,7 +177,7 @@ export default function Home() {
             </div>
           </div>
 
-          <Link href="/combat" className="w-full md:w-auto">
+          <Link href="/play" className="w-full md:w-auto">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
