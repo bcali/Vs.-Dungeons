@@ -232,12 +232,18 @@ function CreateCharacterModal({ campaignId, onClose, onCreated }: { campaignId: 
   const [profession, setProfession] = useState<Profession>("knight");
   const [playerAge, setPlayerAge] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!heroName.trim()) return;
     setSaving(true);
-    await createCharacter(campaignId, heroName.trim(), playerName.trim(), profession, playerAge ? parseInt(playerAge) : undefined);
+    setError(null);
+    const result = await createCharacter(campaignId, heroName.trim(), playerName.trim(), profession, playerAge ? parseInt(playerAge) : undefined);
     setSaving(false);
+    if (!result) {
+      setError("Failed to create hero. Check the browser console for details.");
+      return;
+    }
     onCreated();
   };
 
@@ -291,6 +297,9 @@ function CreateCharacterModal({ campaignId, onClose, onCreated }: { campaignId: 
           <input type="number" value={playerAge} onChange={(e) => setPlayerAge(e.target.value)}
             className="w-full rounded-lg bg-bg-surface border border-white/10 px-3 py-2 text-sm text-text-primary placeholder-text-dim" placeholder="7" />
         </div>
+        {error && (
+          <p className="text-xs text-red-400 bg-red-900/20 rounded-lg px-3 py-2">{error}</p>
+        )}
         <div className="flex gap-3 pt-2">
           <button onClick={onClose} className="flex-1 rounded-lg bg-white/5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary transition-colors active:scale-95">Cancel</button>
           <button onClick={handleCreate} disabled={saving || !heroName.trim()}

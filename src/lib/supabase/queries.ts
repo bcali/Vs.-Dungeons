@@ -3,6 +3,7 @@
 import { getSupabase } from './client';
 import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, SkillBranch, SkillType, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial, Profession, MonsterCategory, DamageType, ItemType } from '@/types/game';
 import type { GameConfig } from '@/types/config';
+import { maxHp } from '@/lib/game/stats';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -169,7 +170,7 @@ export async function createCharacter(
       player_age: playerAge ?? null,
       profession,
       mov: movMap[profession] ?? 3,
-      current_hp: 9, // TGH 3 * 3
+      current_hp: maxHp(3), // v1.1: TGH 3 * 3 + 5 = 14
     })
     .select()
     .single();
