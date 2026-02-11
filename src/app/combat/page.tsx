@@ -16,8 +16,8 @@ export default function CombatTrackerPage() {
     status, encounterName, roundNumber, participants, initiativeOrder,
     currentTurnIndex, actionLog,
     advanceTurn, applyDamage, applyHealing, applyStatusEffect,
-    removeEffect, tickParticipantEffects, regenResource, setResource,
-    setDefending, addLogEntry, endCombat, enterRewardsPhase, resetCombat,
+    removeEffect, tickParticipantEffects, useSpellSlot,
+    setDefending, markAbilityUsed, addLogEntry, endCombat, enterRewardsPhase, resetCombat,
   } = useCombatStore();
 
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
@@ -62,27 +62,36 @@ export default function CombatTrackerPage() {
             applyStatusEffect(result.participantId, {
               ...effect,
               id: crypto.randomUUID(),
-              remainingTurns: (effect as ActiveStatusEffect & { duration?: number }).remainingTurns ?? null,
+              remainingTurns: (effect as unknown as { duration?: number | null }).duration ?? null,
             } as ActiveStatusEffect);
           }
           for (const effectId of result.removedEffects) {
             removeEffect(result.participantId, effectId);
           }
-          // Bug fix: apply resource cost / drain
-          if (result.resourceChange !== 0) {
-            const rp = participants.find((pp) => pp.id === result.participantId);
-            if (rp) setResource(result.participantId, (rp.currentResource ?? 0) + result.resourceChange);
+          // Apply spell slot cost
+          if (result.slotsUsed > 0) {
+            useSpellSlot(result.participantId, result.slotsUsed);
           }
         }
 
-        // Bug fix: apply rage generated for knights on melee hits
-        if (data.rageGenerated && currentActor?.resourceType === 'rage') {
-          setResource(currentActorId, (currentActor.currentResource ?? 0) + data.rageGenerated);
+        // Apply top-level spell slot cost (if specified at action level)
+        if (data.slotsUsed && data.slotsUsed > 0) {
+          useSpellSlot(data.action.actorId, data.slotsUsed);
         }
 
         // Bug fix: set defending flag when action is defend
         if (data.action.type === 'defend') {
           setDefending(data.action.actorId, true);
+        }
+
+        // Track one-time ability usage for monsters
+        if (data.action.type === 'ability' && currentActor?.team === 'enemy') {
+          const specialUsed = currentActor.specialAbilities?.find(
+            sa => sa.name.toLowerCase() === data.action.name.toLowerCase() && sa.isOneTime
+          );
+          if (specialUsed) {
+            markAbilityUsed(currentActorId, specialUsed.name);
+          }
         }
 
         // Add log entry
@@ -120,7 +129,6 @@ export default function CombatTrackerPage() {
             const nextId = initiativeOrder[nextIdx];
             setDefending(nextId, false);
             tickParticipantEffects(nextId);
-            regenResource(nextId);
             advanceTurn();
           }, 2000);
         }
@@ -138,7 +146,7 @@ export default function CombatTrackerPage() {
     setTypedInput("");
   }, [processing, roundNumber, participants, initiativeOrder, currentTurnIndex, currentActor,
       currentActorId, applyDamage, applyHealing, applyStatusEffect, removeEffect, addLogEntry,
-      setResource, setDefending, tickParticipantEffects, regenResource, advanceTurn]);
+      useSpellSlot, setDefending, markAbilityUsed, tickParticipantEffects, advanceTurn]);
 
   const startListening = () => {
     if (!isSpeechRecognitionSupported()) {
@@ -221,9 +229,9 @@ export default function CombatTrackerPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 flex flex-col">
+    <div className="h-screen p-4 flex flex-col overflow-hidden">
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="shrink-0 flex items-center justify-between mb-3">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold">
             <span className="text-accent-red">COMBAT</span>
@@ -238,7 +246,6 @@ export default function CombatTrackerPage() {
             const nextId = initiativeOrder[nextIdx];
             setDefending(nextId, false);
             tickParticipantEffects(nextId);
-            regenResource(nextId);
             advanceTurn();
           }} className="rounded-lg bg-bg-input px-3 py-1 text-xs text-text-secondary hover:text-white transition-colors">
             Skip Turn
@@ -291,8 +298,8 @@ export default function CombatTrackerPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm">HP: {currentActor.currentHp}/{currentActor.maxHp}</p>
-                  {currentActor.resourceType && (
-                    <p className="text-xs text-text-secondary capitalize">{currentActor.resourceType}: {currentActor.currentResource}/{currentActor.maxResource}</p>
+                  {currentActor.spellSlotsMax > 0 && (
+                    <p className="text-xs text-text-secondary">Slots: {currentActor.spellSlotsUsed}/{currentActor.spellSlotsMax} used</p>
                   )}
                 </div>
               </div>
@@ -308,7 +315,7 @@ export default function CombatTrackerPage() {
 
           {/* Heroes Row */}
           <h3 className="text-xs text-text-muted uppercase">Heroes</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             {participants.filter((p) => p.team === 'hero').map((p) => (
               <CombatantCard key={p.id} participant={p} isCurrent={p.id === currentActorId} />
             ))}
@@ -316,7 +323,7 @@ export default function CombatTrackerPage() {
 
           {/* Enemies Row */}
           <h3 className="text-xs text-text-muted uppercase">Enemies</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             {participants.filter((p) => p.team === 'enemy').map((p) => (
               <CombatantCard key={p.id} participant={p} isCurrent={p.id === currentActorId} />
             ))}
@@ -324,10 +331,10 @@ export default function CombatTrackerPage() {
         </div>
 
         {/* Action Log */}
-        <div className="col-span-3 overflow-y-auto">
-          <h3 className="text-xs text-text-muted uppercase mb-2">Action Log</h3>
-          <div className="space-y-2">
-            {actionLog.slice(0, 20).map((entry) => (
+        <div className="col-span-3 flex flex-col min-h-0">
+          <h3 className="shrink-0 text-xs text-text-muted uppercase mb-2">Action Log</h3>
+          <div className="flex-1 overflow-y-auto space-y-2">
+            {[...actionLog].reverse().map((entry) => (
               <div key={entry.id} className="rounded-lg bg-bg-card p-3 text-xs">
                 <p className="text-text-secondary">R{entry.roundNumber} &mdash; {entry.actorName}</p>
                 <p className="font-medium">{entry.narrationShort || entry.abilityName || entry.actionType}</p>
@@ -345,13 +352,13 @@ export default function CombatTrackerPage() {
 
       {/* Narration Banner */}
       {lastNarration && (
-        <div className="mt-3 rounded-lg bg-bg-card border border-border-card px-4 py-3 text-sm italic text-zinc-300">
+        <div className="shrink-0 mt-3 rounded-lg bg-bg-card border border-border-card px-4 py-3 text-sm italic text-zinc-300 max-h-20 overflow-y-auto">
           {lastNarration}
         </div>
       )}
 
-      {/* Voice Input Bar */}
-      <div className="mt-3 rounded-xl bg-bg-card border border-border-card p-4 flex items-center gap-4">
+      {/* Voice Input Bar — sticky at bottom */}
+      <div className="shrink-0 mt-3 rounded-xl bg-bg-card border border-border-card p-4 flex items-center gap-4">
         <button
           onClick={startListening}
           disabled={processing}
@@ -409,46 +416,134 @@ export default function CombatTrackerPage() {
 
 function CombatantCard({ participant: p, isCurrent }: { participant: import("@/types/combat").CombatParticipant; isCurrent: boolean }) {
   const hpPct = (p.currentHp / p.maxHp) * 100;
+  const slotsRemaining = p.spellSlotsMax - p.spellSlotsUsed;
+
   return (
     <div className={`rounded-xl bg-bg-card border p-3 transition-colors ${
-      !p.isActive ? 'border-zinc-700 opacity-50' :
-      isCurrent ? (p.team === 'hero' ? 'border-green-500' : 'border-red-500') : 'border-border-card'
+      !p.isActive ? 'border-zinc-700 opacity-40' :
+      isCurrent ? (p.team === 'hero' ? 'border-green-500 ring-1 ring-green-500/30' : 'border-red-500 ring-1 ring-red-500/30') : 'border-border-card'
     }`}>
+      {/* Header: Name, badges, MOV, stats */}
       <div className="flex items-center justify-between mb-2">
-        <span className={`font-semibold text-sm ${!p.isActive ? 'line-through' : ''}`}>
-          {p.displayName}
-          {p.isBoss && <span className="text-accent-gold ml-1 text-xs">BOSS</span>}
-        </span>
-        {!p.isActive && <span className="text-xs text-red-500">KO</span>}
+        <div className="flex items-center gap-2">
+          <span className={`font-semibold text-sm ${!p.isActive ? 'line-through' : ''}`}>
+            {p.displayName}
+          </span>
+          {p.isBoss && <span className="text-[10px] font-bold bg-accent-gold/20 text-accent-gold rounded px-1.5 py-0.5">BOSS</span>}
+          {p.isMinion && <span className="text-[10px] font-bold bg-zinc-600/40 text-zinc-400 rounded px-1.5 py-0.5">MINION</span>}
+          {!p.isActive && <span className="text-xs text-red-500 font-bold">KO</span>}
+        </div>
+        <div className="flex items-center gap-3 text-[10px] text-text-muted">
+          <span className="text-blue-400">MOV {p.mov}</span>
+          <span className="opacity-30">|</span>
+          <span>STR {p.stats.str}</span>
+          <span>SPD {p.stats.spd}</span>
+          <span>TGH {p.stats.tgh}</span>
+          <span>SMT {p.stats.smt}</span>
+        </div>
       </div>
+
+      {/* HP bar */}
       <div className="mb-1">
-        <div className="flex justify-between text-xs text-text-secondary mb-0.5"><span>HP</span><span>{p.currentHp}/{p.maxHp}</span></div>
+        <div className="flex justify-between text-xs text-text-secondary mb-0.5">
+          <span>HP</span>
+          <span>{p.currentHp}/{p.maxHp}</span>
+        </div>
         <div className="w-full h-2 bg-bg-input rounded-full">
           <div className={`h-full rounded-full transition-all ${hpPct > 50 ? 'bg-hp-high' : hpPct > 25 ? 'bg-hp-mid' : 'bg-hp-low'}`}
             style={{ width: `${hpPct}%` }} />
         </div>
       </div>
-      {p.resourceType && p.maxResource && (
+
+      {/* Spell slots bar */}
+      {p.spellSlotsMax > 0 && (
         <div className="mb-1">
           <div className="flex justify-between text-xs text-text-secondary mb-0.5">
-            <span className="capitalize">{p.resourceType}</span><span>{p.currentResource}/{p.maxResource}</span>
+            <span>Spell Slots</span>
+            <span>{slotsRemaining}/{p.spellSlotsMax} remaining</span>
           </div>
           <div className="w-full h-1.5 bg-bg-input rounded-full">
-            <div className={`h-full rounded-full ${p.resourceType === 'rage' ? 'bg-red-500' : p.resourceType === 'energy' ? 'bg-yellow-400' : 'bg-blue-500'}`}
-              style={{ width: `${(p.currentResource / p.maxResource) * 100}%` }} />
+            <div className="h-full rounded-full bg-blue-500 transition-all"
+              style={{ width: `${(slotsRemaining / p.spellSlotsMax) * 100}%` }} />
           </div>
         </div>
       )}
-      {p.statusEffects.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1">
+
+      {/* Hero abilities */}
+      {p.abilities && p.abilities.length > 0 && (
+        <div className="mt-2 border-t border-white/5 pt-2">
+          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Abilities</p>
+          <div className="space-y-0.5">
+            {p.abilities.map((ab) => {
+              const canAfford = ab.slotCost === 0 || ab.slotCost <= slotsRemaining;
+              return (
+                <div key={ab.id} className={`flex items-center justify-between text-[11px] rounded px-1.5 py-0.5 ${
+                  canAfford ? 'text-text-primary' : 'text-text-muted opacity-40'
+                }`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-medium truncate">{ab.name}</span>
+                    {ab.slotCost > 0 ? (
+                      <span className={`shrink-0 text-[10px] ${canAfford ? 'text-blue-400' : 'text-text-dim'}`}>
+                        {ab.slotCost} slot{ab.slotCost > 1 ? 's' : ''}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[10px] text-text-dim">free</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-text-muted shrink-0 ml-2">
+                    {ab.range && <span>{ab.range}</span>}
+                    {ab.damage && <span className="text-red-400">{ab.damage}</span>}
+                    {ab.effect && <span className="text-emerald-400">{ab.effect}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Monster special abilities */}
+      {p.specialAbilities && p.specialAbilities.length > 0 && (
+        <div className="mt-2 border-t border-white/5 pt-2">
+          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Specials</p>
+          <div className="space-y-0.5">
+            {p.specialAbilities.map((sa) => {
+              const isUsed = sa.isOneTime && (p.usedAbilityNames ?? []).includes(sa.name);
+              return (
+                <div key={sa.name} className={`text-[11px] rounded px-1.5 py-0.5 ${
+                  isUsed ? 'text-text-muted opacity-40 line-through' : 'text-text-primary'
+                }`}>
+                  <span className="font-medium">{sa.name}</span>
+                  {sa.isOneTime && !isUsed && (
+                    <span className="text-accent-gold text-[10px] ml-1 font-bold">1x</span>
+                  )}
+                  {isUsed && (
+                    <span className="text-text-dim text-[10px] ml-1 no-underline">USED</span>
+                  )}
+                  <span className="text-text-muted ml-2">{sa.description}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Status effects + defending + hero surge */}
+      {(p.statusEffects.length > 0 || p.isDefending || p.heroSurgeAvailable) && (
+        <div className="flex flex-wrap items-center gap-1 mt-2 border-t border-white/5 pt-2">
+          {p.heroSurgeAvailable && (
+            <Badge variant="buff" className="text-[10px]">SURGE READY</Badge>
+          )}
           {p.statusEffects.map((e) => (
             <Badge key={e.id} variant={e.category as "buff" | "debuff" | "cc" | "dot" | "hot"} className="text-[10px]">
               {e.displayName}{e.remainingTurns !== null ? ` (${e.remainingTurns}t)` : ''}
             </Badge>
           ))}
+          {p.isDefending && (
+            <Badge variant="buff" className="text-[10px]">DEFENDING +4</Badge>
+          )}
         </div>
       )}
-      {p.isDefending && <span className="text-[10px] text-blue-400 mt-1 block">DEFENDING +4</span>}
     </div>
   );
 }

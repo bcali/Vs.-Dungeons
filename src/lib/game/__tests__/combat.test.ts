@@ -15,7 +15,7 @@ import {
 
 // Helper: create a Stats object with defaults
 function makeStats(overrides: Partial<Stats> = {}): Stats {
-  return { con: 3, str: 3, agi: 3, mna: 3, int: 3, lck: 3, ...overrides };
+  return { str: 3, spd: 3, tgh: 3, smt: 3, ...overrides };
 }
 
 // ─── rollInitiative ─────────────────────────────────────────────────
@@ -25,21 +25,21 @@ describe('rollInitiative', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns roll (1) + AGI bonus when Math.random returns 0', () => {
+  it('returns roll (1) + SPD bonus when Math.random returns 0', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0); // floor(0*20)+1 = 1
-    // AGI 3 => bonus 0 (3-3=0), so result = 1 + 0 = 1
+    // SPD 3 => bonus 0 (3-3=0), so result = 1 + 0 = 1
     expect(rollInitiative(3)).toBe(1);
   });
 
-  it('returns roll (20) + AGI bonus when Math.random returns 0.95', () => {
+  it('returns roll (20) + SPD bonus when Math.random returns 0.95', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.95); // floor(0.95*20)+1 = 20
-    // AGI 5 => bonus 2 (5-3=2), so result = 20 + 2 = 22
+    // SPD 5 => bonus 2 (5-3=2), so result = 20 + 2 = 22
     expect(rollInitiative(5)).toBe(22);
   });
 
-  it('adds negative bonus for low AGI', () => {
+  it('adds negative bonus for low SPD', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5); // floor(0.5*20)+1 = 11
-    // AGI 1 => bonus -2 (1-3=-2), so result = 11 + (-2) = 9
+    // SPD 1 => bonus -2 (1-3=-2), so result = 11 + (-2) = 9
     expect(rollInitiative(1)).toBe(9);
   });
 });
@@ -47,20 +47,17 @@ describe('rollInitiative', () => {
 // ─── isCriticalHit ──────────────────────────────────────────────────
 
 describe('isCriticalHit', () => {
-  it('returns true when roll equals critRange', () => {
-    expect(isCriticalHit(20, 20)).toBe(true);
+  it('returns true for natural 20', () => {
+    expect(isCriticalHit(20)).toBe(true);
   });
 
-  it('returns true when roll exceeds critRange', () => {
-    expect(isCriticalHit(20, 19)).toBe(true);
+  it('returns false for 19', () => {
+    expect(isCriticalHit(19)).toBe(false);
   });
 
-  it('returns false when roll is below critRange', () => {
-    expect(isCriticalHit(19, 20)).toBe(false);
-  });
-
-  it('returns true for expanded crit range', () => {
-    expect(isCriticalHit(18, 18)).toBe(true);
+  it('returns false for low rolls', () => {
+    expect(isCriticalHit(1)).toBe(false);
+    expect(isCriticalHit(10)).toBe(false);
   });
 });
 
@@ -83,11 +80,11 @@ describe('isCriticalMiss', () => {
 // ─── meleeTarget ────────────────────────────────────────────────────
 
 describe('meleeTarget', () => {
-  it('returns STR + 8', () => {
-    expect(meleeTarget(makeStats({ str: 5 }))).toBe(13);
+  it('returns TGH + 8', () => {
+    expect(meleeTarget(makeStats({ tgh: 5 }))).toBe(13);
   });
 
-  it('handles base STR', () => {
+  it('handles base TGH', () => {
     expect(meleeTarget(makeStats())).toBe(11);
   });
 });
@@ -95,11 +92,11 @@ describe('meleeTarget', () => {
 // ─── rangedTarget ───────────────────────────────────────────────────
 
 describe('rangedTarget', () => {
-  it('returns AGI + 8', () => {
-    expect(rangedTarget(makeStats({ agi: 5 }))).toBe(13);
+  it('returns SPD + 8', () => {
+    expect(rangedTarget(makeStats({ spd: 5 }))).toBe(13);
   });
 
-  it('handles base AGI', () => {
+  it('handles base SPD', () => {
     expect(rangedTarget(makeStats())).toBe(11);
   });
 });

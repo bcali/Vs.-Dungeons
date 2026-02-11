@@ -1,17 +1,18 @@
 // Combat resolution helpers
+// Core rules: 4 stats, nat 20 crits, TGH+8 melee defense, SPD+8 ranged defense
 
 import { statBonus } from './stats';
 import type { Stats } from '@/types/game';
 
-/** Roll initiative: d20 + AGI bonus */
-export function rollInitiative(agi: number): number {
+/** Roll initiative: d20 + SPD bonus */
+export function rollInitiative(spd: number): number {
   const roll = Math.floor(Math.random() * 20) + 1;
-  return roll + statBonus(agi);
+  return roll + statBonus(spd);
 }
 
-/** Check if a roll is a critical hit */
-export function isCriticalHit(roll: number, critRange: number): boolean {
-  return roll >= critRange;
+/** Check if a roll is a critical hit (nat 20 only) */
+export function isCriticalHit(roll: number): boolean {
+  return roll === 20;
 }
 
 /** Check if a roll is a critical miss */
@@ -19,14 +20,14 @@ export function isCriticalMiss(roll: number): boolean {
   return roll === 1;
 }
 
-/** Calculate melee attack target number */
+/** Calculate melee attack target number: TGH + 8 */
 export function meleeTarget(targetStats: Stats): number {
-  return targetStats.str + 8;
+  return targetStats.tgh + 8;
 }
 
-/** Calculate ranged attack target number */
+/** Calculate ranged attack target number: SPD + 8 */
 export function rangedTarget(targetStats: Stats): number {
-  return targetStats.agi + 8;
+  return targetStats.spd + 8;
 }
 
 /** Check if an attack hits (roll + bonus >= target) */

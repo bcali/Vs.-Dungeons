@@ -24,14 +24,20 @@ import type {
 // 1. DICE ROLLING
 // ============================================================
 
-/** Roll a d20 (1-20). Uses crypto.getRandomValues when available. */
-export function rollD20(): number {
+/** Crypto-safe random integer in [0, max). Falls back to Math.random. */
+function cryptoRandomInt(max: number): number {
+  if (max <= 0) return 0;
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     const arr = new Uint32Array(1);
     crypto.getRandomValues(arr);
-    return (arr[0] % 20) + 1;
+    return arr[0] % max;
   }
-  return Math.floor(Math.random() * 20) + 1;
+  return Math.floor(Math.random() * max);
+}
+
+/** Roll a d20 (1-20). Uses crypto.getRandomValues when available. */
+export function rollD20(): number {
+  return cryptoRandomInt(20) + 1;
 }
 
 // ============================================================
@@ -169,8 +175,8 @@ export function resolveDrop(
 
   if (candidates.length === 0) return null;
 
-  // Pick random
-  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  // Pick random (crypto-safe)
+  const picked = candidates[cryptoRandomInt(candidates.length)];
 
   return {
     material: picked,

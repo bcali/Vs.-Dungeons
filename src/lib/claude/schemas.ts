@@ -15,12 +15,12 @@ export const CombatActionRequestSchema = z.object({
       currentHp: z.number().int(),
       maxHp: z.number().int().positive(),
       stats: z.object({
-        con: z.number().int(), str: z.number().int(), agi: z.number().int(),
-        mna: z.number().int(), int: z.number().int(), lck: z.number().int(),
+        str: z.number().int(), spd: z.number().int(),
+        tgh: z.number().int(), smt: z.number().int(),
       }),
-      resourceType: z.string().nullable().optional(),
-      currentResource: z.number().int().optional(),
-      maxResource: z.number().int().nullable().optional(),
+      spellSlotsMax: z.number().int(),
+      spellSlotsUsed: z.number().int(),
+      mov: z.number().int(),
       isActive: z.boolean(),
       isDefending: z.boolean().optional(),
       statusEffects: z.array(z.any()).optional(),
@@ -44,7 +44,7 @@ const EffectSchema = z.object({
 const ActionResultSchema = z.object({
   participantId: z.string(),
   hpChange: z.number().int(),
-  resourceChange: z.number().int(),
+  slotsUsed: z.number().int(),
   newEffects: z.array(EffectSchema),
   removedEffects: z.array(z.string()),
 });
@@ -65,7 +65,7 @@ const UnderstoodResponseSchema = z.object({
   results: z.array(ActionResultSchema),
   narration: z.string(),
   narrationShort: z.string(),
-  rageGenerated: z.number().int().optional(),
+  slotsUsed: z.number().int().optional(),
   turnComplete: z.boolean(),
 });
 

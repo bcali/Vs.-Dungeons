@@ -7,10 +7,12 @@ function makeParticipant(overrides: Partial<CombatParticipant> = {}): CombatPart
     id: 'p1',
     displayName: 'Hero',
     team: 'hero',
-    stats: { con: 3, str: 3, agi: 3, mna: 3, int: 3, lck: 3 },
+    stats: { str: 3, spd: 3, tgh: 3, smt: 3 },
     maxHp: 15,
     currentHp: 10,
-    currentResource: 50,
+    spellSlotsMax: 4,
+    spellSlotsUsed: 0,
+    mov: 3,
     initiativeRoll: 10,
     isActive: true,
     isDefending: false,
@@ -39,7 +41,7 @@ function makeResponse(overrides: Partial<ClaudeActionResponse> = {}): ClaudeActi
       {
         participantId: 'p2',
         hpChange: -5,
-        resourceChange: 0,
+        slotsUsed: 0,
         newEffects: [],
         removedEffects: [],
       },
@@ -52,8 +54,8 @@ function makeResponse(overrides: Partial<ClaudeActionResponse> = {}): ClaudeActi
 }
 
 const defaultParticipants: CombatParticipant[] = [
-  makeParticipant({ id: 'p1', displayName: 'Hero', team: 'hero', maxHp: 15, currentHp: 10, currentResource: 50 }),
-  makeParticipant({ id: 'p2', displayName: 'Goblin', team: 'enemy', maxHp: 9, currentHp: 9, currentResource: 0 }),
+  makeParticipant({ id: 'p1', displayName: 'Hero', team: 'hero', maxHp: 15, currentHp: 10, spellSlotsMax: 4, spellSlotsUsed: 0 }),
+  makeParticipant({ id: 'p2', displayName: 'Goblin', team: 'enemy', maxHp: 9, currentHp: 9, spellSlotsMax: 0, spellSlotsUsed: 0 }),
 ];
 
 // ─── validateCombatResponse ─────────────────────────────────────────
@@ -96,7 +98,7 @@ describe('validateCombatResponse', () => {
         {
           participantId: 'p2',
           hpChange: 5,
-          resourceChange: 0,
+          slotsUsed: 0,
           newEffects: [],
           removedEffects: [],
         },
@@ -114,7 +116,7 @@ describe('validateCombatResponse', () => {
         {
           participantId: 'p1',
           hpChange: 5,
-          resourceChange: 0,
+          slotsUsed: 0,
           newEffects: [],
           removedEffects: [],
         },
@@ -124,32 +126,31 @@ describe('validateCombatResponse', () => {
     expect(errors).toEqual([]);
   });
 
-  it('returns error when resource goes negative', () => {
-    // Hero: currentResource=50. resourceChange=-60 => -10 < 0
+  it('returns error when spell slots would exceed max', () => {
+    // Hero: spellSlotsUsed=0, spellSlotsMax=4. slotsUsed=5 => 5 > 4
     const response = makeResponse({
       results: [
         {
           participantId: 'p1',
           hpChange: 0,
-          resourceChange: -60,
+          slotsUsed: 5,
           newEffects: [],
           removedEffects: [],
         },
       ],
     });
     const errors = validateCombatResponse(response, defaultParticipants);
-    expect(errors).toContainEqual(expect.stringContaining('Resource would go negative'));
-    expect(errors).toContainEqual(expect.stringContaining('Hero'));
+    expect(errors).toContainEqual(expect.stringContaining('Spell slots would exceed max'));
   });
 
-  it('does not error when resource spend is within budget', () => {
-    // Hero: currentResource=50. resourceChange=-30 => 20 >= 0, OK
+  it('does not error when spell slot spend is within budget', () => {
+    // Hero: spellSlotsUsed=0, spellSlotsMax=4. slotsUsed=2 => 2 <= 4, OK
     const response = makeResponse({
       results: [
         {
           participantId: 'p1',
           hpChange: 0,
-          resourceChange: -30,
+          slotsUsed: 2,
           newEffects: [],
           removedEffects: [],
         },
@@ -166,7 +167,7 @@ describe('validateCombatResponse', () => {
         {
           participantId: 'p2',
           hpChange: -51,
-          resourceChange: 0,
+          slotsUsed: 0,
           newEffects: [],
           removedEffects: [],
         },
@@ -183,7 +184,7 @@ describe('validateCombatResponse', () => {
         {
           participantId: 'p2',
           hpChange: -50,
-          resourceChange: 0,
+          slotsUsed: 0,
           newEffects: [],
           removedEffects: [],
         },
@@ -200,7 +201,7 @@ describe('validateCombatResponse', () => {
         {
           participantId: 'nonexistent',
           hpChange: -5,
-          resourceChange: 0,
+          slotsUsed: 0,
           newEffects: [],
           removedEffects: [],
         },
@@ -221,25 +222,25 @@ describe('validateCombatResponse', () => {
         {
           participantId: 'p2',
           hpChange: -60,
-          resourceChange: 0,
+          slotsUsed: 0,
           newEffects: [],
           removedEffects: [],
         },
         {
           participantId: 'p1',
           hpChange: 0,
-          resourceChange: -100,
+          slotsUsed: 5,
           newEffects: [],
           removedEffects: [],
         },
       ],
     });
     const errors = validateCombatResponse(response, defaultParticipants);
-    // Should have at least: unknown actor, unknown target, high damage, resource negative
+    // Should have at least: unknown actor, unknown target, high damage, spell slots exceed
     expect(errors.length).toBeGreaterThanOrEqual(4);
     expect(errors.some(e => e.includes('Unknown actor'))).toBe(true);
     expect(errors.some(e => e.includes('Unknown target'))).toBe(true);
     expect(errors.some(e => e.includes('Suspiciously high damage'))).toBe(true);
-    expect(errors.some(e => e.includes('Resource would go negative'))).toBe(true);
+    expect(errors.some(e => e.includes('Spell slots would exceed max'))).toBe(true);
   });
 });

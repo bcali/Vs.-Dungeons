@@ -4,8 +4,8 @@ import {
   totalStat,
   totalStats,
   maxHp,
-  maxResource,
-  critRange,
+  maxSpellSlots,
+  getMov,
   totalStatPointsEarned,
   totalStatPointsSpent,
   meleeDefenseTarget,
@@ -54,104 +54,98 @@ describe('totalStat', () => {
 // ─── totalStats ─────────────────────────────────────────────────────
 
 describe('totalStats', () => {
-  const base: Stats = { con: 3, str: 4, agi: 5, mna: 3, int: 3, lck: 3 };
-  const gear: Stats = { con: 1, str: 0, agi: 2, mna: 0, int: 1, lck: 0 };
+  const base: Stats = { str: 4, spd: 5, tgh: 3, smt: 3 };
+  const gear: Stats = { str: 0, spd: 2, tgh: 1, smt: 0 };
 
   it('sums each stat individually', () => {
     const result = totalStats(base, gear);
-    expect(result).toEqual({ con: 4, str: 4, agi: 7, mna: 3, int: 4, lck: 3 });
+    expect(result).toEqual({ str: 4, spd: 7, tgh: 4, smt: 3 });
   });
 
-  it('returns correct shape with all 6 stat keys', () => {
+  it('returns correct shape with all 4 stat keys', () => {
     const result = totalStats(base, gear);
-    expect(Object.keys(result).sort()).toEqual(['agi', 'con', 'int', 'lck', 'mna', 'str']);
+    expect(Object.keys(result).sort()).toEqual(['smt', 'spd', 'str', 'tgh']);
   });
 });
 
 // ─── maxHp ──────────────────────────────────────────────────────────
 
 describe('maxHp', () => {
-  it('calculates CON * 3', () => {
-    expect(maxHp(5)).toBe(15);
+  it('calculates TGH * 3 + 5 (v1.1)', () => {
+    expect(maxHp(5)).toBe(20);
   });
 
-  it('returns 0 for CON 0', () => {
-    expect(maxHp(0)).toBe(0);
+  it('returns 5 for TGH 0', () => {
+    expect(maxHp(0)).toBe(5);
   });
 
-  it('returns 9 for CON 3', () => {
-    expect(maxHp(3)).toBe(9);
-  });
-});
-
-// ─── maxResource ────────────────────────────────────────────────────
-
-describe('maxResource', () => {
-  it('returns 100 for energy (default)', () => {
-    expect(maxResource('energy', 3)).toBe(100);
+  it('returns 14 for TGH 3 (starting hero)', () => {
+    expect(maxHp(3)).toBe(14);
   });
 
-  it('returns 100 for rage (default)', () => {
-    expect(maxResource('rage', 3)).toBe(100);
-  });
-
-  it('returns MNA * 15 for mana', () => {
-    expect(maxResource('mana', 5)).toBe(75);
-    expect(maxResource('mana', 10)).toBe(150);
-  });
-
-  it('returns 0 for null resource type', () => {
-    expect(maxResource(null, 5)).toBe(0);
-  });
-
-  it('respects custom config for energy and rage pools', () => {
-    expect(maxResource('energy', 3, { energyPoolMax: 80, ragePoolMax: 120, manaPoolFormula: 'MNA * 15' })).toBe(80);
-    expect(maxResource('rage', 3, { energyPoolMax: 80, ragePoolMax: 120, manaPoolFormula: 'MNA * 15' })).toBe(120);
+  it('returns 17 for TGH 4', () => {
+    expect(maxHp(4)).toBe(17);
   });
 });
 
-// ─── critRange ──────────────────────────────────────────────────────
+// ─── maxSpellSlots ──────────────────────────────────────────────────
 
-describe('critRange', () => {
-  it('returns base crit (20) for LCK below all thresholds', () => {
-    expect(critRange(3)).toBe(20);
+describe('maxSpellSlots', () => {
+  it('returns 0 slots at level 1', () => {
+    expect(maxSpellSlots(1)).toBe(0);
   });
 
-  it('returns 19 at LCK 5 (first threshold)', () => {
-    expect(critRange(5)).toBe(19);
+  it('returns 2 slots at level 2', () => {
+    expect(maxSpellSlots(2)).toBe(2);
   });
 
-  it('returns 18 at LCK 8 (second threshold)', () => {
-    expect(critRange(8)).toBe(18);
+  it('returns 10 slots at level 20', () => {
+    expect(maxSpellSlots(20)).toBe(10);
   });
 
-  it('returns 17 at LCK 12 (third threshold)', () => {
-    expect(critRange(12)).toBe(17);
+  it('clamps to max level when beyond progression table', () => {
+    expect(maxSpellSlots(25)).toBe(10);
+  });
+});
+
+// ─── getMov ─────────────────────────────────────────────────────────
+
+describe('getMov', () => {
+  it('returns 3 for knight', () => {
+    expect(getMov('knight')).toBe(3);
   });
 
-  it('uses highest matching threshold for LCK between thresholds', () => {
-    // LCK 6 matches threshold 5 => 19
-    expect(critRange(6)).toBe(19);
-    // LCK 10 matches threshold 8 => 18
-    expect(critRange(10)).toBe(18);
+  it('returns 5 for ranger', () => {
+    expect(getMov('ranger')).toBe(5);
   });
 
-  it('returns 17 for LCK above all thresholds', () => {
-    expect(critRange(15)).toBe(17);
+  it('returns 5 for rogue', () => {
+    expect(getMov('rogue')).toBe(5);
+  });
+
+  it('returns 4 for healer', () => {
+    expect(getMov('healer')).toBe(4);
+  });
+
+  it('returns 3 for wizard', () => {
+    expect(getMov('wizard')).toBe(3);
+  });
+
+  it('returns 3 for inventor', () => {
+    expect(getMov('inventor')).toBe(3);
   });
 });
 
 // ─── totalStatPointsEarned ──────────────────────────────────────────
 
 describe('totalStatPointsEarned', () => {
-  it('returns 1 for level 1 (first entry)', () => {
-    // statPointsPerLevel[0] = 1
-    expect(totalStatPointsEarned(1)).toBe(1);
+  it('returns 2 for level 1 (v1.1: +2 starting)', () => {
+    expect(totalStatPointsEarned(1)).toBe(2);
   });
 
   it('returns sum of first 5 entries for level 5', () => {
-    // [1, 1, 1, 1, 2] = 6
-    expect(totalStatPointsEarned(5)).toBe(6);
+    // [2, 1, 1, 1, 2] = 7
+    expect(totalStatPointsEarned(5)).toBe(7);
   });
 
   it('returns 0 for level 0', () => {
@@ -159,10 +153,9 @@ describe('totalStatPointsEarned', () => {
   });
 
   it('clamps to array length when level exceeds it', () => {
-    // All 20 entries sum: 1+1+1+1+2+1+1+2+1+2+1+2+1+1+2+1+1+2+1+3 = 28
-    expect(totalStatPointsEarned(20)).toBe(28);
-    // Beyond the array should return same total
-    expect(totalStatPointsEarned(25)).toBe(28);
+    // All 20 entries sum: 2+1+1+1+2+1+1+2+1+2+1+2+1+1+2+1+1+2+1+3 = 29
+    expect(totalStatPointsEarned(20)).toBe(29);
+    expect(totalStatPointsEarned(25)).toBe(29);
   });
 });
 
@@ -170,24 +163,24 @@ describe('totalStatPointsEarned', () => {
 
 describe('totalStatPointsSpent', () => {
   it('returns 0 when all stats are at base (3)', () => {
-    const stats: Stats = { con: 3, str: 3, agi: 3, mna: 3, int: 3, lck: 3 };
+    const stats: Stats = { str: 3, spd: 3, tgh: 3, smt: 3 };
     expect(totalStatPointsSpent(stats)).toBe(0);
   });
 
   it('returns total points invested above base', () => {
-    const stats: Stats = { con: 5, str: 4, agi: 3, mna: 3, int: 3, lck: 3 };
+    const stats: Stats = { str: 5, spd: 4, tgh: 3, smt: 3 };
     // (5-3)+(4-3) = 3
     expect(totalStatPointsSpent(stats)).toBe(3);
   });
 
   it('handles negative bonus (below base) correctly', () => {
-    const stats: Stats = { con: 2, str: 3, agi: 3, mna: 3, int: 3, lck: 3 };
+    const stats: Stats = { str: 2, spd: 3, tgh: 3, smt: 3 };
     // (2-3) = -1
     expect(totalStatPointsSpent(stats)).toBe(-1);
   });
 
   it('respects custom statBaseValue', () => {
-    const stats: Stats = { con: 5, str: 5, agi: 5, mna: 5, int: 5, lck: 5 };
+    const stats: Stats = { str: 5, spd: 5, tgh: 5, smt: 5 };
     expect(totalStatPointsSpent(stats, { statBaseValue: 5 })).toBe(0);
   });
 });
@@ -195,7 +188,7 @@ describe('totalStatPointsSpent', () => {
 // ─── meleeDefenseTarget ─────────────────────────────────────────────
 
 describe('meleeDefenseTarget', () => {
-  it('returns STR + 8', () => {
+  it('returns TGH + 8', () => {
     expect(meleeDefenseTarget(3)).toBe(11);
     expect(meleeDefenseTarget(5)).toBe(13);
     expect(meleeDefenseTarget(0)).toBe(8);
@@ -205,7 +198,7 @@ describe('meleeDefenseTarget', () => {
 // ─── rangedDefenseTarget ────────────────────────────────────────────
 
 describe('rangedDefenseTarget', () => {
-  it('returns AGI + 8', () => {
+  it('returns SPD + 8', () => {
     expect(rangedDefenseTarget(3)).toBe(11);
     expect(rangedDefenseTarget(5)).toBe(13);
     expect(rangedDefenseTarget(0)).toBe(8);

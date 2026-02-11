@@ -1,6 +1,7 @@
-// Stat calculations — bonuses, HP, mana pool, crit range
+// Stat calculations — bonuses, HP, spell slots, defense, MOV
+// Core rules: 4 stats (STR, SPD, TGH, SMT), spell slots, nat 20 crits
 
-import type { Stats, StatKey, ResourceType } from '@/types/game';
+import type { Stats, Profession } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 import { DEFAULT_GAME_CONFIG } from '@/types/config';
 
@@ -14,62 +15,49 @@ export function totalStat(base: number, gearBonus: number): number {
   return base + gearBonus;
 }
 
-/** Calculate all total stats */
-export function totalStats(base: Stats, gear: Stats): Stats {
+/** Calculate all total stats (base + gear) */
+export function totalStats(base: Stats, gear: Partial<Stats>): Stats {
   return {
-    con: base.con + gear.con,
-    str: base.str + gear.str,
-    agi: base.agi + gear.agi,
-    mna: base.mna + gear.mna,
-    int: base.int + gear.int,
-    lck: base.lck + gear.lck,
+    str: base.str + (gear.str ?? 0),
+    spd: base.spd + (gear.spd ?? 0),
+    tgh: base.tgh + (gear.tgh ?? 0),
+    smt: base.smt + (gear.smt ?? 0),
   };
 }
 
-/** Calculate max HP: CON * 3 (default) */
-export function maxHp(totalCon: number, config?: Pick<GameConfig, 'hpFormula'>): number {
-  // Formula is always "CON * N" for now
-  const multiplier = 3; // extracted from config.hpFormula if needed
-  return totalCon * multiplier;
+/** Calculate max HP: TGH * 3 + 5 (v1.1 rebalance) */
+export function maxHp(totalTgh: number): number {
+  return totalTgh * 3 + 5;
 }
 
-/** Calculate max resource pool */
-export function maxResource(
-  resourceType: ResourceType | null,
-  totalMna: number,
-  config?: Pick<GameConfig, 'energyPoolMax' | 'ragePoolMax' | 'manaPoolFormula'>
+/** Calculate max spell slots for a given level (core rules progression) */
+export function maxSpellSlots(
+  level: number,
+  config?: Pick<GameConfig, 'spellSlotProgression'>
 ): number {
-  switch (resourceType) {
-    case 'energy':
-      return config?.energyPoolMax ?? DEFAULT_GAME_CONFIG.energyPoolMax;
-    case 'rage':
-      return config?.ragePoolMax ?? DEFAULT_GAME_CONFIG.ragePoolMax;
-    case 'mana':
-      return totalMna * 15; // MNA * 15
-    default:
-      return 0;
-  }
+  const progression = config?.spellSlotProgression ?? DEFAULT_GAME_CONFIG.spellSlotProgression;
+  const idx = Math.min(level, progression.length) - 1;
+  if (idx < 0) return 0;
+  return progression[idx];
 }
 
-/** Calculate crit range based on total LCK */
-export function critRange(
-  totalLck: number,
-  config?: Pick<GameConfig, 'baseCritValue' | 'luckCritThresholds'>
+/** Get movement speed for a profession */
+export function getMov(
+  profession: Profession,
+  config?: Pick<GameConfig, 'movByProfession'>
 ): number {
-  const thresholds = config?.luckCritThresholds ?? DEFAULT_GAME_CONFIG.luckCritThresholds;
-  const base = config?.baseCritValue ?? DEFAULT_GAME_CONFIG.baseCritValue;
+  const table = config?.movByProfession ?? DEFAULT_GAME_CONFIG.movByProfession;
+  return table[profession];
+}
 
-  // Check thresholds from highest to lowest
-  const sortedKeys = Object.keys(thresholds)
-    .map(Number)
-    .sort((a, b) => b - a);
+/** Calculate melee defense target: TGH + 8 */
+export function meleeDefenseTarget(targetTgh: number): number {
+  return targetTgh + 8;
+}
 
-  for (const threshold of sortedKeys) {
-    if (totalLck >= threshold) {
-      return thresholds[String(threshold)];
-    }
-  }
-  return base;
+/** Calculate ranged defense target: SPD + 8 */
+export function rangedDefenseTarget(targetSpd: number): number {
+  return targetSpd + 8;
 }
 
 /** Calculate total stat points earned by a given level */
@@ -94,16 +82,6 @@ export function totalStatPointsSpent(
   return Object.values(stats).reduce((sum, val) => sum + (val - base), 0);
 }
 
-/** Calculate melee defense target number */
-export function meleeDefenseTarget(targetStr: number): number {
-  return targetStr + 8;
-}
-
-/** Calculate ranged defense target number */
-export function rangedDefenseTarget(targetAgi: number): number {
-  return targetAgi + 8;
-}
-
 /** Get the rank name for a given level */
 export function rankForLevel(level: number): string {
   if (level >= 20) return 'LEGENDARY';
@@ -124,5 +102,5 @@ export function xpForLevel(
 ): number {
   const thresholds = config?.xpThresholds ?? DEFAULT_GAME_CONFIG.xpThresholds;
   if (level >= thresholds.length) return Infinity;
-  return thresholds[level]; // level is 1-indexed, array is next-level XP
+  return thresholds[level];
 }

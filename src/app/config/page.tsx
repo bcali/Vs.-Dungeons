@@ -7,14 +7,13 @@ import { fetchGameConfig, saveGameConfig } from "@/lib/supabase/queries";
 import type { GameConfig } from "@/types/config";
 import { GameBackground } from "@/components/ui/game-background";
 
-type Tab = 'stats' | 'resources' | 'combat' | 'leveling' | 'loot' | 'abilities';
+type Tab = 'stats' | 'spellslots' | 'combat' | 'leveling' | 'loot';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'stats', label: 'Stats' },
-  { key: 'resources', label: 'Resources' },
+  { key: 'spellslots', label: 'Spell Slots' },
   { key: 'combat', label: 'Combat' },
   { key: 'leveling', label: 'Leveling' },
   { key: 'loot', label: 'Loot' },
-  { key: 'abilities', label: 'Abilities' },
 ];
 
 export default function ConfigPage() {
@@ -86,11 +85,10 @@ export default function ConfigPage() {
 
       <div className="max-w-4xl mx-auto">
         {activeTab === 'stats' && <StatsTab config={config} update={updateConfigField} />}
-        {activeTab === 'resources' && <ResourcesTab config={config} update={updateConfigField} />}
+        {activeTab === 'spellslots' && <SpellSlotsTab config={config} />}
         {activeTab === 'combat' && <CombatTab config={config} update={updateConfigField} />}
         {activeTab === 'leveling' && <LevelingTab config={config} />}
         {activeTab === 'loot' && <LootTab config={config} />}
-        {activeTab === 'abilities' && <AbilitiesTab config={config} />}
       </div>
       </div>
     </div>
@@ -115,19 +113,18 @@ function NumberField({ label, value, onChange, min, max }: { label: string; valu
 function StatsTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
   return (
     <div className="rounded-xl bg-bg-card border border-border-card p-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Stat System</h2>
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Stat System (4 Stats)</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <NumberField label="Base Stat Value" value={config.statBaseValue} onChange={(v) => update('statBaseValue', v)} min={1} max={10} />
           <NumberField label="Stat Cap" value={config.statCap} onChange={(v) => update('statCap', v)} min={5} max={30} />
-          <NumberField label="Base Movement" value={config.movementBase} onChange={(v) => update('movementBase', v)} min={1} max={20} />
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-secondary">HP Formula</span>
-            <span className="text-sm text-zinc-300">CON x <span className="text-lg font-bold">3</span></span>
+            <span className="text-sm text-zinc-300">TGH x <span className="text-lg font-bold">3</span></span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-text-secondary">Mana Pool Formula</span>
-            <span className="text-sm text-zinc-300">MNA x <span className="text-lg font-bold">15</span></span>
+            <span className="text-sm text-text-secondary">Stat Bonus Formula</span>
+            <span className="text-sm text-zinc-300">{config.statBonusFormula}</span>
           </div>
         </div>
         <div>
@@ -145,29 +142,38 @@ function StatsTab({ config, update }: { config: GameConfig; update: UpdateFn }) 
           </p>
         </div>
       </div>
+
+      {/* MOV by Profession */}
+      <div className="mt-6 pt-4 border-t border-white/5">
+        <h3 className="text-xs text-text-muted mb-3 uppercase">Movement (MOV) by Profession</h3>
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          {Object.entries(config.movByProfession).map(([prof, mov]) => (
+            <div key={prof} className="flex justify-between bg-bg-input/50 rounded px-3 py-2">
+              <span className="text-text-secondary capitalize">{prof}</span>
+              <span className="font-bold">{mov} spaces</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-function ResourcesTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
+function SpellSlotsTab({ config }: { config: GameConfig }) {
   return (
     <div className="rounded-xl bg-bg-card border border-border-card p-6 space-y-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Resource Pools</h2>
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <NumberField label="Energy Pool Max" value={config.energyPoolMax} onChange={(v) => update('energyPoolMax', v)} min={10} max={500} />
-          <NumberField label="Rage Pool Max" value={config.ragePoolMax} onChange={(v) => update('ragePoolMax', v)} min={10} max={500} />
-          <NumberField label="Mana Regen / Turn" value={config.manaRegenPerTurn} onChange={(v) => update('manaRegenPerTurn', v)} min={0} max={100} />
-          <NumberField label="Energy Regen / Turn" value={config.energyRegenPerTurn} onChange={(v) => update('energyRegenPerTurn', v)} min={0} max={100} />
-        </div>
-        <div className="space-y-4">
-          <h3 className="text-xs text-text-muted uppercase">Rage Generation</h3>
-          <NumberField label="On Hit Taken" value={config.rageOnHitTaken} onChange={(v) => update('rageOnHitTaken', v)} min={0} max={50} />
-          <NumberField label="On Melee Hit Landed" value={config.rageOnMeleeHit} onChange={(v) => update('rageOnMeleeHit', v)} min={0} max={50} />
-          <NumberField label="On Crit Taken" value={config.rageOnCritTaken} onChange={(v) => update('rageOnCritTaken', v)} min={0} max={50} />
-          <NumberField label="On Ally KO" value={config.rageOnAllyKo} onChange={(v) => update('rageOnAllyKo', v)} min={0} max={50} />
-          <NumberField label="Short Rest Restore" value={config.shortRestResourceRestore} onChange={(v) => update('shortRestResourceRestore', v)} min={0} max={100} />
-        </div>
+      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Spell Slot Progression</h2>
+      <div className="grid grid-cols-4 gap-2 text-xs">
+        {config.spellSlotProgression.map((slots, i) => (
+          <div key={i} className="flex items-center justify-between bg-bg-input/50 rounded px-3 py-2">
+            <span className="text-text-muted">Lv{i + 1}</span>
+            <span className="font-bold text-blue-400">{slots} slots</span>
+          </div>
+        ))}
+      </div>
+      <div className="pt-4 border-t border-white/5 space-y-2 text-sm text-text-secondary">
+        <p>Cantrips (slot cost 0) are always free.</p>
+        <p>Short rest restores: <span className="text-zinc-300 font-medium">{config.shortRestSlotsRestore}</span> slots.</p>
       </div>
     </div>
   );
@@ -181,8 +187,12 @@ function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn })
         <div className="space-y-4">
           <NumberField label="Defend Bonus" value={config.defendBonus} onChange={(v) => update('defendBonus', v)} min={1} max={10} />
           <NumberField label="Help Friend Bonus" value={config.helpFriendBonus} onChange={(v) => update('helpFriendBonus', v)} min={1} max={10} />
-          <NumberField label="Base Crit Value" value={config.baseCritValue} onChange={(v) => update('baseCritValue', v)} min={15} max={20} />
-          <NumberField label="Lucky Saves / Session" value={config.luckySavesPerSession} onChange={(v) => update('luckySavesPerSession', v)} min={0} max={5} />
+          <NumberField label="Flanking Bonus" value={config.flankingBonus} onChange={(v) => update('flankingBonus', v)} min={0} max={10} />
+          <NumberField label="Surrounding Bonus" value={config.surroundingBonus} onChange={(v) => update('surroundingBonus', v)} min={0} max={10} />
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-text-secondary">Critical Hits</span>
+            <span className="text-sm text-zinc-300">{config.critOnNat20 ? "Natural 20 only" : "Custom"}</span>
+          </div>
         </div>
         <div className="space-y-4">
           <h3 className="text-xs text-text-muted uppercase">Difficulty Targets</h3>
@@ -244,22 +254,6 @@ function LootTab({ config }: { config: GameConfig }) {
                 </div>
               ))}
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AbilitiesTab({ config }: { config: GameConfig }) {
-  return (
-    <div className="rounded-xl bg-bg-card border border-border-card p-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Ability Costs by Tier</h2>
-      <div className="grid grid-cols-4 gap-3 text-sm">
-        {Object.entries(config.abilityCosts).map(([tier, cost]) => (
-          <div key={tier} className="bg-bg-input/50 rounded px-3 py-2 text-center">
-            <div className="text-xs text-text-muted mb-1">Tier {tier}</div>
-            <div className="font-bold">{Array.isArray(cost) ? cost.join('-') : cost}</div>
           </div>
         ))}
       </div>

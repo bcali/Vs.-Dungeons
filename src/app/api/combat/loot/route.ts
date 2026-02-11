@@ -51,6 +51,24 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     const body: LootPayload = await req.json();
 
+    // Validate payload
+    if (!body.encounterName) {
+      return NextResponse.json({ success: false, message: 'Missing encounterName' }, { status: 400 });
+    }
+    if (!Array.isArray(body.assignments) || !Array.isArray(body.xpAwards)) {
+      return NextResponse.json({ success: false, message: 'Invalid payload structure' }, { status: 400 });
+    }
+    for (const a of body.assignments) {
+      if (!a.characterId) {
+        return NextResponse.json({ success: false, message: 'Assignment missing characterId' }, { status: 400 });
+      }
+    }
+    for (const award of body.xpAwards) {
+      if (!award.characterId || typeof award.xpEarned !== 'number') {
+        return NextResponse.json({ success: false, message: 'XP award missing required fields' }, { status: 400 });
+      }
+    }
+
     const errors: string[] = [];
 
     // ---- 1. Apply material assignments ----

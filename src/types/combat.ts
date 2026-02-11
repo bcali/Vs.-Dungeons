@@ -1,11 +1,30 @@
 // Combat-specific types
 
-import type { Stats, ResourceType } from './game';
+import type { Stats } from './game';
 
 export type ActionType = 'melee_attack' | 'ranged_attack' | 'ability' | 'item' | 'defend' | 'help' | 'move' | 'other';
 export type EffectCategory = 'buff' | 'debuff' | 'cc' | 'dot' | 'hot';
 export type CombatStatus = 'setup' | 'active' | 'rewards' | 'completed' | 'abandoned';
 export type Team = 'hero' | 'enemy';
+
+export interface CombatAbility {
+  id: string;
+  name: string;
+  tier: number;
+  slotCost: number;
+  damage?: string;
+  effect?: string;
+  range?: string;
+  aoe?: string;
+  description: string;
+  source: 'ability' | 'skill';
+}
+
+export interface MonsterSpecialAbility {
+  name: string;
+  description: string;
+  isOneTime?: boolean;
+}
 
 export interface CombatParticipant {
   id: string;
@@ -16,15 +35,20 @@ export interface CombatParticipant {
   stats: Stats;
   maxHp: number;
   currentHp: number;
-  resourceType?: ResourceType;
-  maxResource?: number;
-  currentResource: number;
+  spellSlotsMax: number;
+  spellSlotsUsed: number;
+  mov: number;
   initiativeRoll: number;
   isActive: boolean;
   isDefending: boolean;
   statusEffects: ActiveStatusEffect[];
   avatarUrl?: string;
   isBoss: boolean;
+  isMinion?: boolean;
+  heroSurgeAvailable?: boolean;
+  abilities?: CombatAbility[];
+  specialAbilities?: MonsterSpecialAbility[];
+  usedAbilityNames?: string[];
 }
 
 export interface ActiveStatusEffect {
@@ -77,7 +101,7 @@ export interface ClaudeActionResponse {
   results: ClaudeActionResult[];
   narration: string;
   narrationShort: string;
-  rageGenerated?: number;
+  slotsUsed?: number;
   turnComplete: boolean;
 }
 
@@ -92,7 +116,7 @@ export type ClaudeResponse = ClaudeActionResponse | ClaudeClarificationResponse;
 export interface ClaudeActionResult {
   participantId: string;
   hpChange: number;
-  resourceChange: number;
+  slotsUsed: number;
   newEffects: ActiveStatusEffect[];
   removedEffects: string[];
 }

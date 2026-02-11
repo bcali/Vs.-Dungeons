@@ -300,6 +300,15 @@ export function useCombatLoot({ participants, encounterName, roundNumber, combat
     try {
       const { assignments, xpAwards: awards, manualGrants, encounterName: encName } = useLootStore.getState();
 
+      // Validate before persisting
+      if (assignments.length === 0 && manualGrants.length === 0) {
+        store.setComplete();
+        return;
+      }
+      for (const a of assignments) {
+        if (!a.characterId) throw new Error('Assignment missing characterId');
+      }
+
       // 1. Save loot assignments
       const lootResult = await applyLootToCharacters(
         supabase,

@@ -21,6 +21,25 @@ export function validateCombatResponse(
     }
   }
 
+  // Validate ability usage
+  const actor = participants.find(p => p.id === response.action.actorId);
+  if (actor && response.action.type === 'ability' && response.action.name) {
+    const abilityName = response.action.name.toLowerCase();
+    const isBasic = abilityName === 'basic attack' || abilityName === 'defend';
+
+    if (!isBasic && actor.abilities && actor.abilities.length > 0) {
+      const matched = actor.abilities.find(
+        a => a.name.toLowerCase() === abilityName
+      );
+      if (!matched) {
+        // Warn but don't block — Claude may paraphrase ability names
+        errors.push(`[warn] Actor ${actor.displayName} does not have ability "${response.action.name}"`);
+      } else if (matched.slotCost > 0 && (actor.spellSlotsUsed + matched.slotCost) > actor.spellSlotsMax) {
+        errors.push(`${actor.displayName} lacks spell slots for ${matched.name}: needs ${matched.slotCost}, has ${actor.spellSlotsMax - actor.spellSlotsUsed} remaining`);
+      }
+    }
+  }
+
   // Validate each result
   for (const result of response.results) {
     const p = participants.find(pp => pp.id === result.participantId);
@@ -34,9 +53,9 @@ export function validateCombatResponse(
       errors.push(`HP would exceed max for ${p.displayName}: ${p.currentHp + result.hpChange} > ${p.maxHp}`);
     }
 
-    // Resources can't go below 0
-    if (result.resourceChange < 0 && p.currentResource + result.resourceChange < 0) {
-      errors.push(`Resource would go negative for ${p.displayName}`);
+    // Spell slots can't exceed max
+    if (result.slotsUsed > 0 && (p.spellSlotsUsed + result.slotsUsed) > p.spellSlotsMax) {
+      errors.push(`Spell slots would exceed max for ${p.displayName}`);
     }
 
     // Sanity: single hit shouldn't do 50+ damage

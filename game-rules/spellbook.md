@@ -6,13 +6,15 @@ Every profession gets **spells** (or spell-like abilities). Knights call them **
 >
 > Heroes have two ability systems: **Spellbook spells** (this document) cost **spell slots** and are powerful limited-use abilities. **Skill tree abilities** (see `skill-trees.md`) are **free to use** with cooldowns and are your always-available toolkit. Both types share the same **5-slot Action Bar** — you mix and match spellbook spells and tree skills in whatever combination you want. Normal attacks are always free and don't take a slot.
 
+> **Important:** Spell slots are used ONLY for spellbook spells listed in this document. Skill tree active abilities (from `skill-trees.md`) are free to use and do NOT consume spell slots. This means even when you're out of spell slots, you still have interesting options from your skill tree.
+
 ---
 
 ## Spell Slot Progression
 
 | Level | Slots/Battle | Notes |
 |-------|-------------|-------|
-| 1 | 0 | No spells yet |
+| 1 | 0 | No spellbook spells — but you have your **Starter Ability** from the skill tree! |
 | 2 | 2 | Unlock first 2 basic spells |
 | 3 | 2 | Learn 1 new spell |
 | 4 | 3 | +1 slot |
@@ -29,8 +31,6 @@ Every profession gets **spells** (or spell-like abilities). Knights call them **
 **Slots refresh** after a rest (short rest = 1 slot back, long rest = all slots).
 
 **Learning spells:** At each milestone, heroes *choose* which new spells to learn from their available tier. They don't get all of them â€” this creates build variety and meaningful choices.
-
-> **Important:** Spell slots are used ONLY for spellbook spells listed in this document. Skill tree active abilities (from `skill-trees.md`) are free to use and do NOT consume spell slots. This means even when you are out of spell slots, you still have interesting options from your skill tree.
 
 ---
 
@@ -428,35 +428,3 @@ These can be learned by anyone when they find a **Spell Scroll** as loot.
 | **Fly** | 3 | 2 slots | Fly for 3 turns. Move anywhere, ignore terrain |
 | **Earthquake** | 4 | 3 slots | All enemies in 6-stud area take 10 damage and fall prone |
 | **Resurrection** | 4 | 3 slots | Revive a knocked-out ally at half HP |
-
----
-
-## ⚡ Spellbook + Skill Tree Synergies
-
-The best builds combine spellbook spells with skill tree abilities. Here are some powerful combos to look for:
-
-### Knight Examples
-- **Rally Cry** (spellbook, heals + buffs) → **Shield Wall** (tree, blocks damage) = unkillable support tank
-- **Blade Storm** (spellbook, 2 attacks) → **Sweeping Strikes** (tree, AoE passive) = hit everything in range
-- **Unbreakable** (spellbook, can't die) → **Berserker Rage** (tree, bonus damage when low) = ultimate risk/reward
-
-### Rogue/Ranger Examples
-- **Shadow Step** (tree, teleport behind) → **Sneak Attack** (spellbook, double damage from behind) = burst assassin
-- **Hunter's Mark** (tree, +2 damage) → **Barrage** (spellbook, 3 arrows) = massive single-target damage
-- **Bear Companion** (tree, tanky pet) → **Camouflage** (spellbook, stealth) = pet tanks while you hide and snipe
-
-### Action Bar Strategy
-
-At Level 10, a Knight might equip:
-
-| Slot | Ability | Source | Cost |
-|------|---------|--------|------|
-| 1 | Shield Bash | Skill Tree | Free |
-| 2 | Shield Wall | Skill Tree | Free (1/encounter) |
-| 3 | War Shout | Spellbook | 1 spell slot |
-| 4 | Rally Cry | Spellbook | 1 spell slot |
-| 5 | Titan Strike | Spellbook | 2 spell slots |
-
-Plus passives always running: Shield Mastery (+3 defense), Armor Training (+3 HP per armor), Heavy Hitter (+1 melee damage).
-
-> *Full skill tree details in [skill-trees.md](skill-trees.md). Full spell lists above in this document.*

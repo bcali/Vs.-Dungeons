@@ -1,9 +1,11 @@
 // Game configuration types — GM calibration dashboard
 
+import type { Profession } from './game';
+
 export interface GameConfig {
   id: string;
 
-  // Stat system
+  // Stat system (4 stats: STR, SPD, TGH, SMT)
   statCount: number;
   statNames: string[];
   statBaseValue: number;
@@ -15,29 +17,23 @@ export interface GameConfig {
 
   // Derived stats
   hpFormula: string;
-  manaPoolFormula: string;
-  energyPoolMax: number;
-  ragePoolMax: number;
-  movementBase: number;
 
-  // Resource regen
-  manaRegenPerTurn: number;
-  energyRegenPerTurn: number;
-  rageOnHitTaken: number;
-  rageOnMeleeHit: number;
-  rageOnCritTaken: number;
-  rageOnAllyKo: number;
+  // Spell slots per level (index = level - 1, value = max slots)
+  spellSlotProgression: number[];
+
+  // Movement by profession
+  movByProfession: Record<Profession, number>;
 
   // Combat formulas
   meleeDefenseFormula: string;
   rangedDefenseFormula: string;
   defendBonus: number;
   helpFriendBonus: number;
+  flankingBonus: number;
+  surroundingBonus: number;
 
-  // Crit / Luck
-  baseCritValue: number;
-  luckCritThresholds: Record<string, number>;
-  luckySavesPerSession: number;
+  // Crit — natural 20 only
+  critOnNat20: boolean;
 
   // Difficulty targets
   difficultyTargets: {
@@ -47,11 +43,8 @@ export interface GameConfig {
     epic: number;
   };
 
-  // Ability costs by tier
-  abilityCosts: Record<string, number | number[]>;
-
   // Rest recovery
-  shortRestResourceRestore: number;
+  shortRestSlotsRestore: string;
 
   // Loot tables
   lootTables: Record<string, Record<string, string>>;
@@ -67,33 +60,24 @@ export interface GameConfig {
 }
 
 export const DEFAULT_GAME_CONFIG: Omit<GameConfig, 'id' | 'createdAt' | 'updatedAt'> = {
-  statCount: 6,
-  statNames: ['CON', 'STR', 'AGI', 'MNA', 'INT', 'LCK'],
+  statCount: 4,
+  statNames: ['STR', 'SPD', 'TGH', 'SMT'],
   statBaseValue: 3,
   statCap: 15,
   statBonusFormula: 'stat - 3',
-  statPointsPerLevel: [1, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 1, 2, 1, 3],
-  hpFormula: 'CON * 3',
-  manaPoolFormula: 'MNA * 15',
-  energyPoolMax: 100,
-  ragePoolMax: 100,
-  movementBase: 6,
-  manaRegenPerTurn: 20,
-  energyRegenPerTurn: 20,
-  rageOnHitTaken: 15,
-  rageOnMeleeHit: 10,
-  rageOnCritTaken: 25,
-  rageOnAllyKo: 20,
-  meleeDefenseFormula: 'target_STR + 8',
-  rangedDefenseFormula: 'target_AGI + 8',
+  statPointsPerLevel: [2, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 1, 2, 1, 3],
+  hpFormula: 'TGH * 3 + 5',
+  spellSlotProgression: [0, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 10],
+  movByProfession: { knight: 3, ranger: 5, wizard: 3, healer: 4, rogue: 5, inventor: 3 },
+  meleeDefenseFormula: 'target_TGH + 8',
+  rangedDefenseFormula: 'target_SPD + 8',
   defendBonus: 4,
   helpFriendBonus: 3,
-  baseCritValue: 20,
-  luckCritThresholds: { '5': 19, '8': 18, '12': 17 },
-  luckySavesPerSession: 1,
+  flankingBonus: 2,
+  surroundingBonus: 3,
+  critOnNat20: true,
   difficultyTargets: { easy: 8, medium: 12, hard: 16, epic: 20 },
-  abilityCosts: { '1': 30, '2': [30, 40], '3': [40, 50], '4': [50, 60], '5': [60, 70], '6': [70, 80], ultimate: 100 },
-  shortRestResourceRestore: 30,
+  shortRestSlotsRestore: '1',
   lootTables: {
     '1-4': { '1-8': '1 gold', '9-14': '1 Common', '15-18': '2 Common', '19': '1 Uncommon', '20': '1 Uncommon + bonus' },
     '5-9': { '1-8': '1 Common', '9-14': '2 Common', '15-18': '1 Uncommon', '19': '1 Rare', '20': '1 Rare + bonus' },

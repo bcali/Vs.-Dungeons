@@ -136,8 +136,8 @@ export default function CharacterListPage() {
 }
 
 function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void }) {
-  const tCon = totalStat(char.stats.con, char.gearBonus.con);
-  const hp = maxHp(tCon);
+  const tTgh = totalStat(char.stats.tgh, char.gearBonus.tgh);
+  const hp = maxHp(tTgh);
   const currentHp = char.currentHp ?? hp;
   const hpPct = Math.round((currentHp / hp) * 100);
   const nextXp = xpForLevel(char.level);
@@ -149,8 +149,8 @@ function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void })
 
   // Compute quick power summary
   const atk = totalStat(char.stats.str, char.gearBonus.str);
-  const def = 10 + totalStat(char.stats.con, char.gearBonus.con);
-  const spd = totalStat(char.stats.agi, char.gearBonus.agi);
+  const def = totalStat(char.stats.tgh, char.gearBonus.tgh) + 8;
+  const spd = totalStat(char.stats.spd, char.gearBonus.spd);
 
   return (
     <div

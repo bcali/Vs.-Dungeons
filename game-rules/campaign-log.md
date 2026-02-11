@@ -1,6 +1,6 @@
 # 📜 LEGO QUEST — Campaign Log
 
-*Track sessions, quests, loot, and the story as it unfolds.*
+*Track sessions, quests, loot, and the story as it unfolds. v1.1 Rebalance*
 
 ---
 
@@ -14,6 +14,7 @@
 | **Current Quest** | The Stolen Crown (Level 1) |
 | **Party Level** | 1 |
 | **World Threat** | The Shadow Tower (teased) |
+| **Rules Version** | v1.1 (Early Level Rebalance) |
 
 ---
 
@@ -34,6 +35,7 @@
 **Adventure:** The Stolen Crown
 **Duration:** ~mins
 **Summary:** *TBD*
+**Special Rules:** Heroic Start (advantage until first combat victory)
 
 #### XP Earned
 
@@ -63,6 +65,10 @@
 
 - *TBD*
 
+#### Skill Tree Choices
+
+- *TBD*
+
 ---
 
 *Copy the Session template above for each new session*
@@ -86,8 +92,8 @@
 | Location | Level Range | Status | Notes |
 |----------|------------|--------|-------|
 | Brickton Village | Hub | ✅ Discovered | Home base, shop, Mayor |
-| The Forest Path | 1 | 🟡 Upcoming | Giant rats, fallen tree, hidden chest |
-| The Old Mine | 1 | 🟡 Upcoming | 3 rooms, Goblin King boss |
+| The Forest Path | 1 | 🟡 Upcoming | Giant rats (minions!), fallen tree, hidden chest |
+| The Old Mine | 1 | 🟡 Upcoming | 3 rooms, Goblin King boss (HP 16, Dmg 4) |
 | The Shadow Tower | 2–3 | 🔒 Locked | Teased at end of quest 1 |
 
 ### Story Threads
@@ -108,3 +114,14 @@
 | Forest Path | ⬜ Not built | Green plates + trees |
 | Mine Entrance | ⬜ Not built | Gray bricks, 3 rooms |
 | Goblin King Throne | ⬜ Not built | Boss room centerpiece |
+
+### Physical Token Inventory
+
+*Track Lego pieces used as game tokens*
+
+| Token | Lego Piece | Qty Available |
+|-------|-----------|---------------|
+| Common Seal 🟢 | Green 1×1 flat tile | *count* |
+| Uncommon Seal 🔵 | Blue stud | *count* |
+| Gold Coins | Yellow 1×1 round | *count* |
+| Hero Surge Token | Special 1×1 tile (unique) | 2 (one per hero) |

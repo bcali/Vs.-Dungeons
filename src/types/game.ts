@@ -1,7 +1,6 @@
 // Core game types — Characters, Monsters, Abilities, Items
 
 export type Profession = 'knight' | 'ranger' | 'wizard' | 'healer' | 'rogue' | 'inventor';
-export type ResourceType = 'rage' | 'energy' | 'mana';
 export type Rank = 'Starting Hero' | 'Apprentice' | 'Adventurer' | 'Veteran' | 'Champion' | 'Hero' | 'Legend' | 'Mythic' | 'LEGENDARY';
 export type ItemType = 'weapon' | 'armor' | 'consumable' | 'quest' | 'misc';
 export type SealTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -9,43 +8,29 @@ export type MonsterCategory = 'undead' | 'beast' | 'humanoid' | 'elemental' | 'c
 export type DamageType = 'physical' | 'fire' | 'ice' | 'poison' | 'holy' | 'lightning';
 
 export interface Stats {
-  con: number;
-  str: number;
-  agi: number;
-  mna: number;
-  int: number;
-  lck: number;
+  str: number;  // Strength — melee damage, physical power
+  spd: number;  // Speed — initiative, ranged defense, dodge
+  tgh: number;  // Toughness — HP, melee defense, endurance
+  smt: number;  // Smarts — spell power, puzzles, perception
 }
 
-export type StatKey = keyof Stats;
-
-export const STAT_KEYS: StatKey[] = ['con', 'str', 'agi', 'mna', 'int', 'lck'];
+export const STAT_KEYS = ['str', 'spd', 'tgh', 'smt'] as const;
+export type StatKey = (typeof STAT_KEYS)[number];
 
 export const STAT_LABELS: Record<StatKey, { abbr: string; name: string; description: string }> = {
-  con: { abbr: 'CON', name: 'Constitution', description: 'Hit Points, resist poison/traps, endurance' },
-  str: { abbr: 'STR', name: 'Strength', description: 'Melee damage, lifting, breaking, melee defense' },
-  agi: { abbr: 'AGI', name: 'Agility', description: 'Turn order, dodging, ranged accuracy, ranged defense' },
-  mna: { abbr: 'MNA', name: 'Mana', description: 'Spell/ability power, magic checks, max mana pool' },
-  int: { abbr: 'INT', name: 'Intelligence', description: 'Spotting secrets, puzzles, crafting, knowledge' },
-  lck: { abbr: 'LCK', name: 'Luck', description: 'Crit range, loot quality, lucky saves' },
-};
-
-export const PROFESSION_RESOURCE: Record<Profession, ResourceType> = {
-  knight: 'rage',
-  ranger: 'mana',
-  wizard: 'mana',
-  healer: 'mana',
-  rogue: 'energy',
-  inventor: 'mana',
+  str: { abbr: 'STR', name: 'Strength', description: 'Melee damage, lifting, breaking things' },
+  spd: { abbr: 'SPD', name: 'Speed', description: 'Turn order, dodging, ranged accuracy, ranged defense' },
+  tgh: { abbr: 'TGH', name: 'Toughness', description: 'Hit Points, melee defense, endurance' },
+  smt: { abbr: 'SMT', name: 'Smarts', description: 'Spell power, puzzles, perception, crafting' },
 };
 
 export const PROFESSION_INFO: Record<Profession, { name: string; role: string; bestStats: string; abilityFlavor: string }> = {
-  knight:   { name: 'Knight',   role: 'Tank / Frontline',    bestStats: 'STR + CON', abilityFlavor: 'Battle Cries' },
-  ranger:   { name: 'Ranger',   role: 'Ranged / Scout',      bestStats: 'AGI + INT', abilityFlavor: 'Techniques' },
-  wizard:   { name: 'Wizard',   role: 'Damage Caster',       bestStats: 'MNA + INT', abilityFlavor: 'Spells' },
-  healer:   { name: 'Healer',   role: 'Support',             bestStats: 'MNA + CON', abilityFlavor: 'Prayers' },
-  rogue:    { name: 'Rogue',    role: 'Stealth / Burst',     bestStats: 'AGI + LCK', abilityFlavor: 'Tricks' },
-  inventor: { name: 'Inventor', role: 'Gadgets / Summons',   bestStats: 'INT + AGI', abilityFlavor: 'Blueprints' },
+  knight:   { name: 'Knight',   role: 'Tank / Frontline',    bestStats: 'STR + TGH', abilityFlavor: 'Battle Cries' },
+  ranger:   { name: 'Ranger',   role: 'Ranged / Scout',      bestStats: 'SPD + SMT', abilityFlavor: 'Techniques' },
+  wizard:   { name: 'Wizard',   role: 'Damage Caster',       bestStats: 'SMT + TGH', abilityFlavor: 'Spells' },
+  healer:   { name: 'Healer',   role: 'Support',             bestStats: 'SMT + TGH', abilityFlavor: 'Prayers' },
+  rogue:    { name: 'Rogue',    role: 'Stealth / Burst',     bestStats: 'SPD + STR', abilityFlavor: 'Tricks' },
+  inventor: { name: 'Inventor', role: 'Gadgets / Summons',   bestStats: 'SMT + SPD', abilityFlavor: 'Blueprints' },
 };
 
 export interface Character {
@@ -59,12 +44,12 @@ export interface Character {
   rank: string;
   xp: number;
   gold: number;
-  resourceType: ResourceType | null;
   stats: Stats;
   gearBonus: Stats;
   unspentStatPoints: number;
   currentHp: number | null;
-  currentResource: number | null;
+  spellSlotsUsed: number;
+  mov: number;
   avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -75,10 +60,11 @@ export interface Ability {
   name: string;
   profession: string;
   tier: number;
-  resourceCost: number;
-  resourceType: string | null;
+  slotCost: number;
   unlockLevel: number;
   description: string;
+  range: string;
+  aoe: string;
   effectJson: Record<string, unknown> | null;
 }
 
@@ -120,6 +106,8 @@ export interface Monster {
   hp: number;
   damage: number;
   damageType: DamageType;
+  mov: number;
+  attackRange: string;
   specialAbilities: Record<string, unknown>[] | null;
   description: string | null;
   avatarUrl: string | null;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState, useCallback } from "react";
 import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials } from "@/lib/supabase/queries";
-import { maxHp, maxResource, totalStats, totalStat, statBonus, critRange, xpForLevel, rankForLevel } from "@/lib/game/stats";
+import { maxHp, maxSpellSlots, getMov, totalStats, totalStat, statBonus, xpForLevel, rankForLevel } from "@/lib/game/stats";
 import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/types/game";
 import type { Character, Ability, InventoryItem, CharacterSeals, CharacterMaterial, StatKey } from "@/types/game";
 import { TIER_COLORS, CATEGORY_ICONS } from "@/types/game";
@@ -45,12 +45,10 @@ const UPCOMING_ABILITIES: Record<string, { name: string; desc: string; icon: str
 };
 
 const STAT_TIPS: Record<string, string> = {
-  con: "How tough you are \u2014 more CON = more HP!",
-  str: "How hard you hit \u2014 SMASH!",
-  agi: "How quick you are \u2014 dodge & move!",
-  mna: "Your magical power \u2014 fuel for spells!",
-  int: "Your cleverness \u2014 better skills & crafting!",
-  lck: "Your fortune \u2014 lucky crits & saves!",
+  str: "How hard you hit \u2014 melee damage!",
+  spd: "How quick you are \u2014 initiative & ranged defense!",
+  tgh: "How tough you are \u2014 HP & melee defense!",
+  smt: "How clever you are \u2014 spell power & puzzles!",
 };
 
 export default function CharacterSheetPage({ params }: { params: Promise<{ id: string }> }) {
@@ -97,13 +95,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
     if (!char) return;
     setSaving(true);
     const ts = totalStats(char.stats, char.gearBonus);
-    const hp = maxHp(ts.con);
-    const mr = maxResource(char.resourceType, ts.mna);
+    const hp = maxHp(ts.tgh);
     await updateCharacter(char.id, {
       stats: char.stats,
       unspentStatPoints: char.unspentStatPoints,
       currentHp: char.currentHp ?? hp,
-      currentResource: char.currentResource ?? (char.resourceType === 'rage' ? 0 : mr),
     });
     setSaving(false);
     setDirty(false);
@@ -121,11 +117,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
   }
 
   const ts = totalStats(char.stats, char.gearBonus);
-  const hp = maxHp(ts.con);
+  const hp = maxHp(ts.tgh);
   const currentHp = char.currentHp ?? hp;
-  const mr = maxResource(char.resourceType, ts.mna);
-  const currentRes = char.currentResource ?? (char.resourceType === 'rage' ? 0 : mr);
-  const crit = critRange(ts.lck);
+  const slotsMax = maxSpellSlots(char.level);
+  const slotsUsed = char.spellSlotsUsed ?? 0;
+  const mov = getMov(char.profession as import("@/types/game").Profession);
   const nextXp = xpForLevel(char.level);
   const profInfo = char.profession ? PROFESSION_INFO[char.profession] : null;
   const profKey = char.profession ?? "";
@@ -272,25 +268,25 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                       showLabel
                       label={"\u2764\uFE0F HP"}
                     />
-                    {char.resourceType && (
+                    {slotsMax > 0 && (
                       <GameProgressBar
-                        value={currentRes}
-                        max={mr}
-                        color={char.resourceType === "rage" ? "bg-resource-rage" : char.resourceType === "energy" ? "bg-resource-energy" : "bg-resource-mana"}
+                        value={slotsMax - slotsUsed}
+                        max={slotsMax}
+                        color="bg-blue-500"
                         height="md"
                         showLabel
-                        label={char.resourceType === "rage" ? "\u{1F525} Rage" : char.resourceType === "energy" ? "\u26A1 Energy" : "\u{1F52E} Mana"}
+                        label={`\u{1F52E} Spell Slots (${slotsMax - slotsUsed}/${slotsMax})`}
                       />
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { icon: "\u2694\uFE0F", label: "Melee Dmg", val: String(ts.str) },
-                      { icon: "\u{1F3C3}", label: "Move", val: "6 studs" },
-                      { icon: "\u{1F6E1}", label: "Melee Def", val: String(ts.str + 8) },
-                      { icon: "\u{1F3F9}", label: "Ranged Def", val: String(ts.agi + 8) },
-                      { icon: "\u{1F4A5}", label: "Crit Range", val: `${crit}+` },
-                      { icon: "\u{1F340}", label: "Lucky Saves", val: "1" },
+                      { icon: "\u{1F3C3}", label: "MOV", val: `${mov} spaces` },
+                      { icon: "\u{1F6E1}", label: "Melee Def", val: String(ts.tgh + 8) },
+                      { icon: "\u{1F3F9}", label: "Ranged Def", val: String(ts.spd + 8) },
+                      { icon: "\u{1F4A5}", label: "Crit", val: "Nat 20" },
+                      { icon: "\u{1F52E}", label: "Spell Slots", val: `${slotsMax}` },
                     ].map((s) => (
                       <div key={s.label} className="rounded-lg bg-white/5 px-3 py-2 text-center">
                         <div className="text-base">{s.icon}</div>
@@ -335,7 +331,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                           </div>
                           <div className="text-right flex-shrink-0 ml-3">
                             <span className="text-xs text-text-secondary">Tier {ab.tier}</span>
-                            {ab.resourceCost > 0 && <p className="text-xs text-text-muted">{ab.resourceCost} {ab.resourceType}</p>}
+                            {ab.slotCost > 0 && <p className="text-xs text-text-muted">{ab.slotCost} slot{ab.slotCost > 1 ? 's' : ''}</p>}
                           </div>
                         </div>
                       ))}

@@ -1,106 +1,106 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, SkillBranch, SkillType, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial, Profession, MonsterCategory, DamageType, ItemType } from '@/types/game';
 import type { GameConfig } from '@/types/config';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+/** DB rows from Supabase before mapping to app types */
+type DbRow = Record<string, unknown>;
+
+/** Log a query/mutation error consistently */
+function logQueryError(fn: string, error: unknown): void {
+  console.warn(`[queries] ${fn}:`, error);
+}
 
 // ─── Row → App type mappers ────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToCharacter(row: any): Character {
+function rowToCharacter(row: DbRow): Character {
   return {
-    id: row.id,
-    campaignId: row.campaign_id,
-    heroName: row.hero_name,
-    playerName: row.player_name,
-    playerAge: row.player_age,
-    profession: row.profession,
-    level: row.level,
-    rank: row.rank,
-    xp: row.xp,
-    gold: row.gold,
-    resourceType: row.resource_type,
-    stats: { con: row.stat_con, str: row.stat_str, agi: row.stat_agi, mna: row.stat_mna, int: row.stat_int, lck: row.stat_lck },
-    gearBonus: { con: row.gear_bonus_con, str: row.gear_bonus_str, agi: row.gear_bonus_agi, mna: row.gear_bonus_mna, int: row.gear_bonus_int, lck: row.gear_bonus_lck },
-    unspentStatPoints: row.unspent_stat_points,
-    currentHp: row.current_hp,
-    currentResource: row.current_resource,
-    avatarUrl: row.avatar_url,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id as string,
+    campaignId: row.campaign_id as string,
+    heroName: (row.hero_name as string) ?? null,
+    playerName: (row.player_name as string) ?? null,
+    playerAge: (row.player_age as number) ?? null,
+    profession: (row.profession as Profession) ?? null,
+    level: row.level as number,
+    rank: row.rank as string,
+    xp: row.xp as number,
+    gold: row.gold as number,
+    stats: { str: row.stat_str as number, spd: row.stat_spd as number, tgh: row.stat_tgh as number, smt: row.stat_smt as number },
+    gearBonus: { str: row.gear_bonus_str as number, spd: row.gear_bonus_spd as number, tgh: row.gear_bonus_tgh as number, smt: row.gear_bonus_smt as number },
+    unspentStatPoints: row.unspent_stat_points as number,
+    currentHp: (row.current_hp as number) ?? null,
+    spellSlotsUsed: (row.spell_slots_used as number) ?? 0,
+    mov: (row.mov as number) ?? 3,
+    avatarUrl: (row.avatar_url as string) ?? null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToMonster(row: any): Monster {
+function rowToMonster(row: DbRow): Monster {
   return {
-    id: row.id,
-    name: row.name,
-    level: row.level,
-    isBoss: row.is_boss,
-    category: row.category,
-    stats: { con: row.stat_con, str: row.stat_str, agi: row.stat_agi, mna: row.stat_mna, int: row.stat_int, lck: row.stat_lck },
-    hp: row.hp,
-    damage: row.damage,
-    damageType: row.damage_type,
-    specialAbilities: row.special_abilities,
-    description: row.description,
-    avatarUrl: row.avatar_url,
-    xpReward: row.xp_reward ?? 0,
+    id: row.id as string,
+    name: row.name as string,
+    level: row.level as number,
+    isBoss: row.is_boss as boolean,
+    category: (row.category as MonsterCategory) ?? null,
+    stats: { str: row.stat_str as number, spd: row.stat_spd as number, tgh: row.stat_tgh as number, smt: row.stat_smt as number },
+    hp: row.hp as number,
+    damage: row.damage as number,
+    damageType: row.damage_type as DamageType,
+    mov: (row.mov as number) ?? 3,
+    attackRange: (row.attack_range as string) ?? 'Melee',
+    specialAbilities: (row.special_abilities as Record<string, unknown>[]) ?? null,
+    description: (row.description as string) ?? null,
+    avatarUrl: (row.avatar_url as string) ?? null,
+    xpReward: (row.xp_reward as number) ?? 0,
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToAbility(row: any): Ability {
+function rowToAbility(row: DbRow): Ability {
   return {
-    id: row.id,
-    name: row.name,
-    profession: row.profession,
-    tier: row.tier,
-    resourceCost: row.resource_cost,
-    resourceType: row.resource_type,
-    unlockLevel: row.unlock_level,
-    description: row.description,
-    effectJson: row.effect_json,
+    id: row.id as string,
+    name: row.name as string,
+    profession: row.profession as string,
+    tier: row.tier as number,
+    slotCost: (row.slot_cost as number) ?? 0,
+    unlockLevel: row.unlock_level as number,
+    description: row.description as string,
+    range: (row.range as string) ?? 'Self',
+    aoe: (row.aoe as string) ?? 'Single',
+    effectJson: (row.effect_json as Record<string, unknown>) ?? null,
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToConfig(row: any): GameConfig {
+function rowToConfig(row: DbRow): GameConfig {
   return {
-    id: row.id,
-    statCount: row.stat_count,
-    statNames: row.stat_names,
-    statBaseValue: row.stat_base_value,
-    statCap: row.stat_cap,
-    statBonusFormula: row.stat_bonus_formula,
-    statPointsPerLevel: row.stat_points_per_level,
-    hpFormula: row.hp_formula,
-    manaPoolFormula: row.mana_pool_formula,
-    energyPoolMax: row.energy_pool_max,
-    ragePoolMax: row.rage_pool_max,
-    movementBase: row.movement_base,
-    manaRegenPerTurn: row.mana_regen_per_turn,
-    energyRegenPerTurn: row.energy_regen_per_turn,
-    rageOnHitTaken: row.rage_on_hit_taken,
-    rageOnMeleeHit: row.rage_on_melee_hit,
-    rageOnCritTaken: row.rage_on_crit_taken,
-    rageOnAllyKo: row.rage_on_ally_ko,
-    meleeDefenseFormula: row.melee_defense_formula,
-    rangedDefenseFormula: row.ranged_defense_formula,
-    defendBonus: row.defend_bonus,
-    helpFriendBonus: row.help_friend_bonus,
-    baseCritValue: row.base_crit_value,
-    luckCritThresholds: row.luck_crit_thresholds,
-    luckySavesPerSession: row.lucky_saves_per_session,
-    difficultyTargets: row.difficulty_targets,
-    abilityCosts: row.ability_costs,
-    shortRestResourceRestore: row.short_rest_resource_restore,
-    lootTables: row.loot_tables,
-    xpAwards: row.xp_awards,
-    xpThresholds: row.xp_thresholds,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id as string,
+    statCount: row.stat_count as number,
+    statNames: row.stat_names as string[],
+    statBaseValue: row.stat_base_value as number,
+    statCap: row.stat_cap as number,
+    statBonusFormula: row.stat_bonus_formula as string,
+    statPointsPerLevel: row.stat_points_per_level as number[],
+    hpFormula: row.hp_formula as string,
+    spellSlotProgression: row.spell_slot_progression as number[],
+    movByProfession: row.mov_by_profession as GameConfig['movByProfession'],
+    meleeDefenseFormula: row.melee_defense_formula as string,
+    rangedDefenseFormula: row.ranged_defense_formula as string,
+    defendBonus: row.defend_bonus as number,
+    helpFriendBonus: row.help_friend_bonus as number,
+    flankingBonus: row.flanking_bonus as number,
+    surroundingBonus: row.surrounding_bonus as number,
+    critOnNat20: row.crit_on_nat20 as boolean,
+    difficultyTargets: row.difficulty_targets as GameConfig['difficultyTargets'],
+    shortRestSlotsRestore: row.short_rest_slots_restore as string,
+    lootTables: row.loot_tables as Record<string, Record<string, string>>,
+    xpAwards: row.xp_awards as Record<string, number | number[]>,
+    xpThresholds: row.xp_thresholds as number[],
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
@@ -112,7 +112,8 @@ export async function fetchCampaign(): Promise<Campaign | null> {
     .select('*')
     .limit(1)
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('fetchCampaign', error); return null; }
+  if (!data) return null;
   return {
     id: data.id,
     name: data.name,
@@ -133,7 +134,8 @@ export async function fetchCharacters(campaignId: string): Promise<Character[]> 
     .select('*')
     .eq('campaign_id', campaignId)
     .order('created_at');
-  if (error || !data) return [];
+  if (error) { logQueryError('fetchCharacters', error); return []; }
+  if (!data) return [];
   return data.map(rowToCharacter);
 }
 
@@ -143,7 +145,8 @@ export async function fetchCharacter(id: string): Promise<Character | null> {
     .select('*')
     .eq('id', id)
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('fetchCharacter', error); return null; }
+  if (!data) return null;
   return rowToCharacter(data);
 }
 
@@ -154,9 +157,8 @@ export async function createCharacter(
   profession: string,
   playerAge?: number
 ): Promise<Character | null> {
-  const resourceMap: Record<string, string> = {
-    knight: 'rage', ranger: 'mana', wizard: 'mana',
-    healer: 'mana', rogue: 'energy', inventor: 'mana',
+  const movMap: Record<string, number> = {
+    knight: 3, ranger: 5, wizard: 3, healer: 4, rogue: 5, inventor: 3,
   };
   const { data, error } = await getSupabase()
     .from('characters')
@@ -166,15 +168,17 @@ export async function createCharacter(
       player_name: playerName,
       player_age: playerAge ?? null,
       profession,
-      resource_type: resourceMap[profession] ?? 'mana',
-      current_hp: 9, // CON 3 * 3
+      mov: movMap[profession] ?? 3,
+      current_hp: 9, // TGH 3 * 3
     })
     .select()
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('createCharacter', error); return null; }
+  if (!data) return null;
 
   // Create seals record
-  await getSupabase().from('character_seals').insert({ character_id: data.id });
+  const { error: sealsError } = await getSupabase().from('character_seals').insert({ character_id: data.id });
+  if (sealsError) logQueryError('createCharacter.seals', sealsError);
 
   return rowToCharacter(data);
 }
@@ -190,17 +194,16 @@ export async function updateCharacter(
     rank: string;
     xp: number;
     gold: number;
-    resourceType: string;
     stats: Stats;
     gearBonus: Stats;
     unspentStatPoints: number;
     currentHp: number;
-    currentResource: number;
+    spellSlotsUsed: number;
+    mov: number;
     avatarUrl: string;
   }>
 ): Promise<Character | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const row: any = {};
+  const row: Record<string, unknown> = {};
   if (updates.heroName !== undefined) row.hero_name = updates.heroName;
   if (updates.playerName !== undefined) row.player_name = updates.playerName;
   if (updates.playerAge !== undefined) row.player_age = updates.playerAge;
@@ -209,26 +212,22 @@ export async function updateCharacter(
   if (updates.rank !== undefined) row.rank = updates.rank;
   if (updates.xp !== undefined) row.xp = updates.xp;
   if (updates.gold !== undefined) row.gold = updates.gold;
-  if (updates.resourceType !== undefined) row.resource_type = updates.resourceType;
   if (updates.unspentStatPoints !== undefined) row.unspent_stat_points = updates.unspentStatPoints;
   if (updates.currentHp !== undefined) row.current_hp = updates.currentHp;
-  if (updates.currentResource !== undefined) row.current_resource = updates.currentResource;
+  if (updates.spellSlotsUsed !== undefined) row.spell_slots_used = updates.spellSlotsUsed;
+  if (updates.mov !== undefined) row.mov = updates.mov;
   if (updates.avatarUrl !== undefined) row.avatar_url = updates.avatarUrl;
   if (updates.stats) {
-    row.stat_con = updates.stats.con;
     row.stat_str = updates.stats.str;
-    row.stat_agi = updates.stats.agi;
-    row.stat_mna = updates.stats.mna;
-    row.stat_int = updates.stats.int;
-    row.stat_lck = updates.stats.lck;
+    row.stat_spd = updates.stats.spd;
+    row.stat_tgh = updates.stats.tgh;
+    row.stat_smt = updates.stats.smt;
   }
   if (updates.gearBonus) {
-    row.gear_bonus_con = updates.gearBonus.con;
     row.gear_bonus_str = updates.gearBonus.str;
-    row.gear_bonus_agi = updates.gearBonus.agi;
-    row.gear_bonus_mna = updates.gearBonus.mna;
-    row.gear_bonus_int = updates.gearBonus.int;
-    row.gear_bonus_lck = updates.gearBonus.lck;
+    row.gear_bonus_spd = updates.gearBonus.spd;
+    row.gear_bonus_tgh = updates.gearBonus.tgh;
+    row.gear_bonus_smt = updates.gearBonus.smt;
   }
 
   const { data, error } = await getSupabase()
@@ -237,13 +236,15 @@ export async function updateCharacter(
     .eq('id', id)
     .select()
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('updateCharacter', error); return null; }
+  if (!data) return null;
   return rowToCharacter(data);
 }
 
 export async function deleteCharacter(id: string): Promise<boolean> {
   const { error } = await getSupabase().from('characters').delete().eq('id', id);
-  return !error;
+  if (error) { logQueryError('deleteCharacter', error); return false; }
+  return true;
 }
 
 // ─── Character Seals ────────────────────────────────────────────────────
@@ -254,7 +255,8 @@ export async function fetchSeals(characterId: string): Promise<CharacterSeals | 
     .select('*')
     .eq('character_id', characterId)
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('fetchSeals', error); return null; }
+  if (!data) return null;
   return {
     id: data.id,
     characterId: data.character_id,
@@ -273,11 +275,11 @@ export async function fetchCharacterAbilities(characterId: string): Promise<(Abi
     .from('character_abilities')
     .select('*, abilities(*)')
     .eq('character_id', characterId);
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    ...rowToAbility(row.abilities),
-    learnedAtLevel: row.learned_at_level,
+  if (error) { logQueryError('fetchCharacterAbilities', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    ...rowToAbility(row.abilities as DbRow),
+    learnedAtLevel: row.learned_at_level as number,
   }));
 }
 
@@ -285,7 +287,8 @@ export async function learnAbility(characterId: string, abilityId: string, level
   const { error } = await getSupabase()
     .from('character_abilities')
     .insert({ character_id: characterId, ability_id: abilityId, learned_at_level: level });
-  return !error;
+  if (error) { logQueryError('learnAbility', error); return false; }
+  return true;
 }
 
 // ─── Character Inventory ────────────────────────────────────────────────
@@ -296,16 +299,16 @@ export async function fetchInventory(characterId: string): Promise<InventoryItem
     .select('*')
     .eq('character_id', characterId)
     .order('created_at');
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    characterId: row.character_id,
-    itemName: row.item_name,
-    itemType: row.item_type,
-    quantity: row.quantity,
-    effectJson: row.effect_json,
-    equipped: row.equipped,
+  if (error) { logQueryError('fetchInventory', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    id: row.id as string,
+    characterId: row.character_id as string,
+    itemName: row.item_name as string,
+    itemType: row.item_type as ItemType,
+    quantity: row.quantity as number,
+    effectJson: (row.effect_json as Record<string, unknown>) ?? null,
+    equipped: row.equipped as boolean,
   }));
 }
 
@@ -318,7 +321,8 @@ export async function fetchAbilitiesByProfession(profession: string): Promise<Ab
     .eq('profession', profession)
     .order('tier')
     .order('unlock_level');
-  if (error || !data) return [];
+  if (error) { logQueryError('fetchAbilitiesByProfession', error); return []; }
+  if (!data) return [];
   return data.map(rowToAbility);
 }
 
@@ -329,13 +333,15 @@ export async function fetchMonsters(filters?: { level?: number; isBoss?: boolean
   if (filters?.level !== undefined) query = query.eq('level', filters.level);
   if (filters?.isBoss !== undefined) query = query.eq('is_boss', filters.isBoss);
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error) { logQueryError('fetchMonsters', error); return []; }
+  if (!data) return [];
   return data.map(rowToMonster);
 }
 
 export async function fetchMonster(id: string): Promise<Monster | null> {
   const { data, error } = await getSupabase().from('monsters').select('*').eq('id', id).single();
-  if (error || !data) return null;
+  if (error) { logQueryError('fetchMonster', error); return null; }
+  if (!data) return null;
   return rowToMonster(data);
 }
 
@@ -347,7 +353,8 @@ export async function fetchGameConfig(): Promise<GameConfig | null> {
     .select('*')
     .limit(1)
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('fetchGameConfig', error); return null; }
+  if (!data) return null;
   return rowToConfig(data);
 }
 
@@ -362,26 +369,17 @@ export async function saveGameConfig(config: GameConfig): Promise<GameConfig | n
       stat_bonus_formula: config.statBonusFormula,
       stat_points_per_level: config.statPointsPerLevel,
       hp_formula: config.hpFormula,
-      mana_pool_formula: config.manaPoolFormula,
-      energy_pool_max: config.energyPoolMax,
-      rage_pool_max: config.ragePoolMax,
-      movement_base: config.movementBase,
-      mana_regen_per_turn: config.manaRegenPerTurn,
-      energy_regen_per_turn: config.energyRegenPerTurn,
-      rage_on_hit_taken: config.rageOnHitTaken,
-      rage_on_melee_hit: config.rageOnMeleeHit,
-      rage_on_crit_taken: config.rageOnCritTaken,
-      rage_on_ally_ko: config.rageOnAllyKo,
+      spell_slot_progression: config.spellSlotProgression,
+      mov_by_profession: config.movByProfession,
       melee_defense_formula: config.meleeDefenseFormula,
       ranged_defense_formula: config.rangedDefenseFormula,
       defend_bonus: config.defendBonus,
       help_friend_bonus: config.helpFriendBonus,
-      base_crit_value: config.baseCritValue,
-      luck_crit_thresholds: config.luckCritThresholds,
-      lucky_saves_per_session: config.luckySavesPerSession,
+      flanking_bonus: config.flankingBonus,
+      surrounding_bonus: config.surroundingBonus,
+      crit_on_nat20: config.critOnNat20,
       difficulty_targets: config.difficultyTargets,
-      ability_costs: config.abilityCosts,
-      short_rest_resource_restore: config.shortRestResourceRestore,
+      short_rest_slots_restore: config.shortRestSlotsRestore,
       loot_tables: config.lootTables,
       xp_awards: config.xpAwards,
       xp_thresholds: config.xpThresholds,
@@ -389,7 +387,8 @@ export async function saveGameConfig(config: GameConfig): Promise<GameConfig | n
     .eq('id', config.id)
     .select()
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('saveGameConfig', error); return null; }
+  if (!data) return null;
   return rowToConfig(data);
 }
 
@@ -413,28 +412,28 @@ export async function saveCombatLog(
     })
     .select('id')
     .single();
-  if (error || !data) return null;
+  if (error) { logQueryError('saveCombatLog', error); return null; }
+  if (!data) return null;
   return data.id;
 }
 
 // ─── Skill Tree ────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToSkillTreeSkill(row: any): SkillTreeSkill {
+function rowToSkillTreeSkill(row: DbRow): SkillTreeSkill {
   return {
-    id: row.id,
-    skillCode: row.skill_code,
-    name: row.name,
-    class: row.class,
-    branch: row.branch,
-    tier: row.tier,
-    skillType: row.skill_type,
-    maxRank: row.max_rank,
-    description: row.description,
-    rankEffects: row.rank_effects,
-    legoTip: row.lego_tip,
-    effectJson: row.effect_json,
-    sortOrder: row.sort_order,
+    id: row.id as string,
+    skillCode: row.skill_code as string,
+    name: row.name as string,
+    class: row.class as SkillTreeClass,
+    branch: row.branch as SkillBranch,
+    tier: row.tier as number,
+    skillType: row.skill_type as SkillType,
+    maxRank: row.max_rank as number,
+    description: row.description as string,
+    rankEffects: (row.rank_effects as Record<string, unknown>[]) ?? null,
+    legoTip: (row.lego_tip as string) ?? null,
+    effectJson: (row.effect_json as Record<string, unknown>) ?? null,
+    sortOrder: row.sort_order as number,
   };
 }
 
@@ -446,7 +445,8 @@ export async function fetchSkillTreeSkills(skillClass: SkillTreeClass): Promise<
     .order('branch')
     .order('tier')
     .order('sort_order');
-  if (error || !data) return [];
+  if (error) { logQueryError('fetchSkillTreeSkills', error); return []; }
+  if (!data) return [];
   return data.map(rowToSkillTreeSkill);
 }
 
@@ -455,14 +455,14 @@ export async function fetchSkillAllocations(characterId: string): Promise<Charac
     .from('character_skill_allocations')
     .select('*')
     .eq('character_id', characterId);
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    characterId: row.character_id,
-    skillId: row.skill_id,
-    currentRank: row.current_rank,
-    learnedAtLevel: row.learned_at_level,
+  if (error) { logQueryError('fetchSkillAllocations', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    id: row.id as string,
+    characterId: row.character_id as string,
+    skillId: row.skill_id as string,
+    currentRank: row.current_rank as number,
+    learnedAtLevel: row.learned_at_level as number,
   }));
 }
 
@@ -472,28 +472,29 @@ export async function fetchActionBar(characterId: string): Promise<ActionBarSlot
     .select('*')
     .eq('character_id', characterId)
     .order('slot_number');
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    characterId: row.character_id,
-    slotNumber: row.slot_number,
-    skillId: row.skill_id,
-    abilityId: row.ability_id,
+  if (error) { logQueryError('fetchActionBar', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    id: row.id as string,
+    characterId: row.character_id as string,
+    slotNumber: row.slot_number as number,
+    skillId: row.skill_id as string | null,
+    abilityId: row.ability_id as string | null,
   }));
 }
 
 export async function allocateSkillPoint(characterId: string, skillId: string): Promise<number | null> {
   const { data, error } = await getSupabase()
     .rpc('allocate_skill_point', { p_character_id: characterId, p_skill_id: skillId });
-  if (error) { console.error('allocate_skill_point error:', error.message); return null; }
+  if (error) { logQueryError('allocateSkillPoint', error); return null; }
   return data;
 }
 
 export async function respecCharacter(characterId: string): Promise<boolean> {
   const { error } = await getSupabase()
     .rpc('respec_character', { p_character_id: characterId });
-  return !error;
+  if (error) { logQueryError('respecCharacter', error); return false; }
+  return true;
 }
 
 export async function setActionBarSlot(
@@ -510,7 +511,8 @@ export async function setActionBarSlot(
       skill_id: skillId,
       ability_id: abilityId,
     }, { onConflict: 'character_id,slot_number' });
-  return !error;
+  if (error) { logQueryError('setActionBarSlot', error); return false; }
+  return true;
 }
 
 export async function clearActionBarSlot(characterId: string, slotNumber: number): Promise<boolean> {
@@ -525,7 +527,8 @@ export async function fetchMonstersByIds(ids: string[]): Promise<Monster[]> {
     .from('monsters')
     .select('*')
     .in('id', ids);
-  if (error || !data) return [];
+  if (error) { logQueryError('fetchMonstersByIds', error); return []; }
+  if (!data) return [];
   return data.map(rowToMonster);
 }
 
@@ -538,15 +541,15 @@ export async function fetchItemCatalog(filters?: { itemType?: string; rarity?: s
   if (filters?.itemType) query = query.eq('item_type', filters.itemType);
   if (filters?.rarity) query = query.eq('rarity', filters.rarity);
   const { data, error } = await query;
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    itemType: row.item_type,
-    rarity: row.rarity,
-    description: row.description,
-    effectJson: row.effect_json,
+  if (error) { logQueryError('fetchItemCatalog', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    id: row.id as string,
+    name: row.name as string,
+    itemType: row.item_type as ItemType,
+    rarity: row.rarity as CatalogItem['rarity'],
+    description: (row.description as string) ?? null,
+    effectJson: (row.effect_json as Record<string, unknown>) ?? null,
   }));
 }
 
@@ -565,7 +568,7 @@ export async function addInventoryItem(
       p_quantity: quantity,
       p_effect_json: effectJson ?? null,
     });
-  if (error) { console.error('add_inventory_item error:', error.message); return null; }
+  if (error) { logQueryError('addInventoryItem', error); return null; }
   return data;
 }
 
@@ -575,7 +578,7 @@ export async function incrementXp(characterId: string, amount: number): Promise<
       character_uuid: characterId,
       amount,
     });
-  if (error) { console.error('increment_xp error:', error.message); return null; }
+  if (error) { logQueryError('incrementXp', error); return null; }
   return data;
 }
 
@@ -584,7 +587,8 @@ export async function saveCombatRewards(combatId: string, rewardsJson: unknown):
     .from('combats')
     .update({ rewards_json: rewardsJson })
     .eq('id', combatId);
-  return !error;
+  if (error) { logQueryError('saveCombatRewards', error); return false; }
+  return true;
 }
 
 // ─── Crafting Professions ──────────────────────────────────────────────
@@ -595,7 +599,8 @@ export async function fetchCharacterCraftingProfessions(characterId: string): Pr
     .select('profession')
     .eq('character_id', characterId)
     .order('created_at');
-  if (error || !data) return [];
+  if (error) { logQueryError('fetchCharacterCraftingProfessions', error); return []; }
+  if (!data) return [];
   return data.map((row: { profession: string }) => row.profession as CraftingProfession);
 }
 
@@ -603,7 +608,8 @@ export async function addCharacterCraftingProfession(characterId: string, profes
   const { error } = await getSupabase()
     .from('character_crafting_professions')
     .insert({ character_id: characterId, profession });
-  return !error;
+  if (error) { logQueryError('addCharacterCraftingProfession', error); return false; }
+  return true;
 }
 
 export async function fetchProfessionChoices(characterId: string, profession: CraftingProfession): Promise<Record<number, number>> {
@@ -612,7 +618,8 @@ export async function fetchProfessionChoices(characterId: string, profession: Cr
     .select('node_number, selected_option')
     .eq('character_id', characterId)
     .eq('profession', profession);
-  if (error || !data) return {};
+  if (error) { logQueryError('fetchProfessionChoices', error); return {}; }
+  if (!data) return {};
   const choices: Record<number, number> = {};
   for (const row of data) {
     choices[row.node_number] = row.selected_option;
@@ -634,7 +641,8 @@ export async function saveProfessionChoice(
       node_number: nodeNumber,
       selected_option: selectedOption,
     }, { onConflict: 'character_id,profession,node_number' });
-  return !error;
+  if (error) { logQueryError('saveProfessionChoice', error); return false; }
+  return true;
 }
 
 // ─── Materials & Loot ──────────────────────────────────────────────────
@@ -646,17 +654,17 @@ export async function fetchMaterials(): Promise<Material[]> {
     .order('tier')
     .order('category')
     .order('name');
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    category: row.category,
-    tier: row.tier,
-    icon: row.icon,
-    legoToken: row.lego_token,
-    dropLevelMin: row.drop_level_min,
-    description: row.description,
+  if (error) { logQueryError('fetchMaterials', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    id: row.id as string,
+    name: row.name as string,
+    category: row.category as Material['category'],
+    tier: row.tier as Material['tier'],
+    icon: row.icon as string | null,
+    legoToken: row.lego_token as string | null,
+    dropLevelMin: row.drop_level_min as number,
+    description: row.description as string | null,
   }));
 }
 
@@ -665,17 +673,17 @@ export async function fetchCharacterMaterials(characterId: string): Promise<Char
     .from('character_inventory_view')
     .select('*')
     .eq('character_id', characterId);
-  if (error || !data) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    characterId: row.character_id,
-    materialId: row.material_id,
-    quantity: row.quantity,
-    materialName: row.material_name,
-    category: row.category,
-    tier: row.tier,
-    icon: row.icon,
-    legoToken: row.lego_token,
+  if (error) { logQueryError('fetchCharacterMaterials', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => ({
+    characterId: row.character_id as string,
+    materialId: row.material_id as string,
+    quantity: row.quantity as number,
+    materialName: row.material_name as string,
+    category: row.category as Material['category'],
+    tier: row.tier as Material['tier'],
+    icon: row.icon as string | null,
+    legoToken: row.lego_token as string | null,
   }));
 }
 
@@ -690,7 +698,7 @@ export async function addCharacterMaterial(
       p_material_id: materialId,
       p_quantity: quantity,
     });
-  if (error) { console.error('add_character_material error:', error.message); return false; }
+  if (error) { logQueryError('addCharacterMaterial', error); return false; }
   return true;
 }
 
@@ -705,7 +713,7 @@ export async function getLootDrops(
       p_is_boss: isBoss,
       p_roll: roll,
     });
-  if (error) { console.error('get_loot_drops error:', error.message); return []; }
+  if (error) { logQueryError('getLootDrops', error); return []; }
   return Array.isArray(data) ? data : (data ? [data] : []);
 }
 
@@ -729,5 +737,6 @@ export async function logEncounterLoot(
       encounter_name: encounterName ?? null,
       session_id: sessionId ?? null,
     });
-  return !error;
+  if (error) { logQueryError('logEncounterLoot', error); return false; }
+  return true;
 }

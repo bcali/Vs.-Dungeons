@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { fetchCampaign, fetchCharacters, fetchMonsters } from "@/lib/supabase/queries";
-import { maxHp, maxResource, totalStats } from "@/lib/game/stats";
+import { maxHp, maxSpellSlots, getMov, totalStats } from "@/lib/game/stats";
 import { rollInitiative } from "@/lib/game/combat";
+import { buildHeroCombatAbilities, buildMonsterSpecialAbilities } from "@/lib/game/combat-abilities";
 import { useCombatStore } from "@/stores/combat-store";
-import type { Character, Monster, Campaign } from "@/types/game";
+import type { Character, Monster, Campaign, Profession } from "@/types/game";
 import type { CombatParticipant } from "@/types/combat";
 import { GameBackground } from "@/components/ui/game-background";
 
@@ -63,14 +64,24 @@ export default function EncounterSetupPage() {
     return true;
   });
 
-  const handleStartCombat = () => {
+  const handleStartCombat = async () => {
     const participants: CombatParticipant[] = [];
 
+    // Fetch abilities for all heroes in parallel
+    const heroAbilities = await Promise.all(
+      heroes.map((hero) =>
+        hero.profession
+          ? buildHeroCombatAbilities(hero.id, hero.profession as Profession)
+          : Promise.resolve([])
+      )
+    );
+
     // Build hero participants
-    for (const hero of heroes) {
+    for (let i = 0; i < heroes.length; i++) {
+      const hero = heroes[i];
       const ts = totalStats(hero.stats, hero.gearBonus);
-      const hp = maxHp(ts.con);
-      const mr = maxResource(hero.resourceType, ts.mna);
+      const hp = maxHp(ts.tgh);
+      const slotsMax = maxSpellSlots(hero.level);
       participants.push({
         id: crypto.randomUUID(),
         displayName: hero.heroName || "Hero",
@@ -79,19 +90,21 @@ export default function EncounterSetupPage() {
         stats: ts,
         maxHp: hp,
         currentHp: hero.currentHp ?? hp,
-        resourceType: hero.resourceType ?? undefined,
-        maxResource: mr || undefined,
-        currentResource: hero.currentResource ?? (hero.resourceType === 'rage' ? 0 : mr),
-        initiativeRoll: rollInitiative(ts.agi),
+        spellSlotsMax: slotsMax,
+        spellSlotsUsed: hero.spellSlotsUsed ?? 0,
+        mov: getMov(hero.profession as Profession),
+        initiativeRoll: rollInitiative(ts.spd),
         isActive: true,
         isDefending: false,
         statusEffects: [],
         isBoss: false,
+        abilities: heroAbilities[i],
       });
     }
 
     // Build monster participants
     for (const { monster, count } of selectedMonsters) {
+      const specials = buildMonsterSpecialAbilities(monster.specialAbilities);
       for (let i = 0; i < count; i++) {
         participants.push({
           id: crypto.randomUUID(),
@@ -101,14 +114,15 @@ export default function EncounterSetupPage() {
           stats: monster.stats,
           maxHp: monster.hp,
           currentHp: monster.hp,
-          resourceType: undefined,
-          maxResource: undefined,
-          currentResource: 0,
-          initiativeRoll: rollInitiative(monster.stats.agi),
+          spellSlotsMax: 0,
+          spellSlotsUsed: 0,
+          mov: monster.mov ?? 3,
+          initiativeRoll: rollInitiative(monster.stats.spd),
           isActive: true,
           isDefending: false,
           statusEffects: [],
           isBoss: monster.isBoss,
+          specialAbilities: specials.length > 0 ? specials : undefined,
         });
       }
     }

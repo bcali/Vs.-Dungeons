@@ -6,7 +6,7 @@ import { persist } from 'zustand/middleware';
 import type { CombatParticipant, ActiveStatusEffect, ActionLogEntry, CombatStatus } from '@/types/combat';
 import { tickEffects, applyEffect, removeEffect as removeEffectFromList } from '@/lib/game/status-effects';
 import { applyDamage, applyHealing as healHp, isKnockedOut } from '@/lib/game/combat';
-import { applyRegen } from '@/lib/game/resources';
+import { useSpellSlots, restoreAllSlots } from '@/lib/game/spell-slots';
 import { saveQueue } from '@/lib/utils/save-queue';
 import { getSupabase } from '@/lib/supabase/client';
 
@@ -28,9 +28,11 @@ interface CombatState {
   applyStatusEffect: (targetId: string, effect: ActiveStatusEffect) => void;
   removeEffect: (targetId: string, effectId: string) => void;
   tickParticipantEffects: (participantId: string) => void;
-  regenResource: (participantId: string) => void;
-  setResource: (participantId: string, amount: number) => void;
+  useSpellSlot: (participantId: string, cost: number) => void;
+  restoreSpellSlots: (participantId: string) => void;
   setDefending: (participantId: string, defending: boolean) => void;
+  markAbilityUsed: (participantId: string, abilityName: string) => void;
+  useHeroSurge: (participantId: string) => void;
   addLogEntry: (entry: Omit<ActionLogEntry, 'id' | 'timestamp'>) => void;
   getParticipant: (id: string) => CombatParticipant | undefined;
   endCombat: () => void;
@@ -133,23 +135,20 @@ export const useCombatStore = create<CombatState>()(
         }));
       },
 
-      regenResource: (participantId) => {
+      useSpellSlot: (participantId, cost) => {
         set(state => ({
           participants: state.participants.map(p => {
-            if (p.id !== participantId || !p.resourceType || !p.maxResource) return p;
-            return {
-              ...p,
-              currentResource: applyRegen(p.currentResource, p.maxResource, p.resourceType),
-            };
+            if (p.id !== participantId) return p;
+            return { ...p, spellSlotsUsed: useSpellSlots(p.spellSlotsUsed, cost) };
           }),
         }));
       },
 
-      setResource: (participantId, amount) => {
+      restoreSpellSlots: (participantId) => {
         set(state => ({
           participants: state.participants.map(p => {
             if (p.id !== participantId) return p;
-            return { ...p, currentResource: Math.max(0, Math.min(amount, p.maxResource ?? 100)) };
+            return { ...p, spellSlotsUsed: restoreAllSlots() };
           }),
         }));
       },
@@ -159,6 +158,26 @@ export const useCombatStore = create<CombatState>()(
           participants: state.participants.map(p => {
             if (p.id !== participantId) return p;
             return { ...p, isDefending: defending };
+          }),
+        }));
+      },
+
+      markAbilityUsed: (participantId, abilityName) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            const used = p.usedAbilityNames ?? [];
+            if (used.includes(abilityName)) return p;
+            return { ...p, usedAbilityNames: [...used, abilityName] };
+          }),
+        }));
+      },
+
+      useHeroSurge: (participantId) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            return { ...p, heroSurgeAvailable: false };
           }),
         }));
       },
@@ -200,14 +219,14 @@ export const useCombatStore = create<CombatState>()(
         });
       },
 
-      /** Save hero HP/resources to Supabase after each action */
+      /** Save hero HP/spell slots to Supabase after each action */
       persistCombatSnapshot: () => {
         const { combatId, participants, status, roundNumber } = get();
         if (!combatId) return;
 
         const heroes = participants.filter(p => p.team === 'hero' && p.characterId);
 
-        // Update each hero's current HP + resource in the characters table
+        // Update each hero's current HP + spell slots in the characters table
         for (const hero of heroes) {
           saveQueue.save(`hero-hp-${hero.characterId}`, async () => {
             const supabase = getSupabase();
@@ -215,7 +234,7 @@ export const useCombatStore = create<CombatState>()(
               .from('characters')
               .update({
                 current_hp: hero.currentHp,
-                current_resource: hero.currentResource,
+                spell_slots_used: hero.spellSlotsUsed,
               })
               .eq('id', hero.characterId!);
             if (error) throw error;
