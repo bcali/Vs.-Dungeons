@@ -23,6 +23,9 @@ const buttonVariants = cva(
         "game-action": "bg-accent-red text-white hover:bg-accent-red/80 font-bold",
         "game-secondary": "bg-bg-input text-text-secondary hover:text-white hover:bg-bg-input/80",
         "game-ghost": "text-text-muted hover:text-white hover:bg-bg-input/30",
+        "game-lego-green": "bg-lego-green hover:bg-green-600 text-white font-black uppercase tracking-wider border-b-6 border-green-800 shadow-xl active:border-b-0 active:translate-y-1 transition-all",
+        "game-lego-red": "bg-accent-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-b-6 border-red-900 shadow-xl active:border-b-0 active:translate-y-1 transition-all",
+        "game-lego-gold": "bg-accent-gold hover:bg-yellow-500 text-bg-page font-black uppercase tracking-wider border-b-6 border-yellow-700 shadow-xl active:border-b-0 active:translate-y-1 transition-all",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -33,6 +36,7 @@ const buttonVariants = cva(
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
+        "game-lg": "h-14 rounded-lg px-8 text-xl gap-3",
       },
     },
     defaultVariants: {

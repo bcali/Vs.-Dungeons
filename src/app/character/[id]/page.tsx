@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { use, useEffect, useState, useCallback } from "react";
+import { motion } from "motion/react";
+import { BarChart3, Swords, Sparkles, Gem, Package, Hammer } from "lucide-react";
 import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials } from "@/lib/supabase/queries";
 import { maxHp, maxSpellSlots, getMov, totalStats, totalStat, statBonus, xpForLevel, rankForLevel } from "@/lib/game/stats";
 import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/types/game";
@@ -11,7 +13,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkillTreePanel } from "@/components/character/skill-tree-panel";
 import { ProfessionTreePanel } from "@/components/character/profession-tree-panel";
 import { GameProgressBar } from "@/components/ui/game-progress-bar";
-import { GameBackground } from "@/components/ui/game-background";
+import { PageShell, fadeUp } from "@/components/ui/page-shell";
+import { GlassCard } from "@/components/ui/glass-card";
+import { SectionLabel } from "@/components/ui/section-label";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { HeroAvatar } from "@/components/character/hero-avatar";
 import { cn } from "@/lib/utils";
@@ -107,12 +111,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
 
   if (loading || !char) {
     return (
-      <div className="min-h-screen relative">
-        <GameBackground className="fixed inset-0 z-0" />
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
+      <PageShell maxWidth="max-w-7xl">
+        <motion.div variants={fadeUp} className="flex items-center justify-center min-h-[60vh]">
           <span className="text-text-muted animate-pulse font-semibold">Loading character...</span>
-        </div>
-      </div>
+        </motion.div>
+      </PageShell>
     );
   }
 
@@ -129,58 +132,66 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
   const emoji = PROFESSION_EMOJI[profKey] || "\u{1F9D1}";
   const flavorTitle = profKey ? (FLAVOR_TITLES[profKey]?.[Math.min(char.level, 5)] || "Adventurer") : "Adventurer";
 
-  // Find highest stat
   const highestStat = STAT_KEYS.reduce((a, b) => ts[a] > ts[b] ? a : b);
 
   return (
-    <div className="min-h-screen relative">
-      <GameBackground className="fixed inset-0 z-0" />
-
-      <div className="relative z-10 p-4 md:p-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <div
-          className="rounded-xl p-5 mb-6 border backdrop-blur-md animate-slide-up"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--${colorToken}) 15%, transparent), rgba(13, 2, 33, 0.85))`,
-            borderColor: `color-mix(in srgb, var(--${colorToken}) 25%, transparent)`,
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Link href="/character" className="text-text-secondary hover:text-text-primary text-sm transition-colors">&larr; Back</Link>
-            <button onClick={handleSave} disabled={!dirty || saving}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-bold transition-all active:scale-95",
-                dirty ? "bg-accent-gold text-bg-page hover:bg-accent-gold/80" : "bg-white/5 text-text-muted cursor-default"
-              )}>
-              {saving ? "Saving..." : dirty ? "Save" : "Saved \u2713"}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-5">
-            {/* Avatar */}
-            <HeroAvatar profession={char.profession} level={char.level} size="lg" />
-
-            <div className="flex-1 min-w-0">
-              <h1 className="text-sm md:text-base text-text-title truncate">{char.heroName || "Hero"}</h1>
-              <p className="text-sm text-text-secondary mt-1">
-                Level {char.level} {profInfo?.name ?? ""} &bull; <span className="italic text-accent-gold/60">{flavorTitle}</span>
-              </p>
-              <div className="mt-2 max-w-sm">
-                <GameProgressBar
-                  value={char.xp}
-                  max={nextXp === Infinity ? 1 : nextXp}
-                  color="bg-xp-bar"
-                  height="sm"
-                  showLabel
-                  label="XP"
-                />
-              </div>
-              <p className="text-xs text-accent-gold mt-1">{"\u{1F4B0}"} {char.gold} Gold</p>
-            </div>
-          </div>
+    <PageShell maxWidth="max-w-7xl" padding="p-4 md:p-6">
+      {/* Header Banner */}
+      <motion.div
+        variants={fadeUp}
+        className="rounded-xl p-5 mb-6 border backdrop-blur-md"
+        style={{
+          background: `linear-gradient(135deg, color-mix(in srgb, var(--${colorToken}) 15%, transparent), rgba(13, 2, 33, 0.85))`,
+          borderColor: `color-mix(in srgb, var(--${colorToken}) 25%, transparent)`,
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <Link href="/character" className="text-text-secondary hover:text-text-primary text-sm transition-colors">&larr; Back</Link>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            className={cn(
+              "rounded-lg px-5 py-2 text-sm font-black uppercase tracking-wider transition-all",
+              dirty
+                ? "bg-accent-gold hover:bg-yellow-500 text-bg-page border-b-4 border-yellow-700 shadow-lg active:border-b-0 active:translate-y-1"
+                : "bg-white/5 text-text-muted cursor-default"
+            )}
+          >
+            {saving ? "Saving..." : dirty ? "Save" : "Saved \u2713"}
+          </motion.button>
         </div>
 
-        {/* Tabs */}
+        <div className="flex items-center gap-5">
+          <HeroAvatar profession={char.profession} level={char.level} size="lg" />
+          <div className="flex-1 min-w-0">
+            <h1
+              className="text-sm md:text-lg font-mono text-lego-yellow truncate"
+              style={{ textShadow: "2px 2px 0px #000, 0px 0px 15px rgba(242, 205, 55, 0.3)" }}
+            >
+              {char.heroName || "Hero"}
+            </h1>
+            <p className="text-sm text-text-secondary mt-1">
+              Level {char.level} {profInfo?.name ?? ""} &bull; <span className="italic text-accent-gold/60">{flavorTitle}</span>
+            </p>
+            <div className="mt-2 max-w-sm">
+              <GameProgressBar
+                value={char.xp}
+                max={nextXp === Infinity ? 1 : nextXp}
+                color="bg-xp-bar"
+                height="sm"
+                showLabel
+                label="XP"
+              />
+            </div>
+            <p className="text-xs text-accent-gold mt-1">{"\u{1F4B0}"} {char.gold} Gold</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Tabs */}
+      <motion.div variants={fadeUp}>
         <Tabs defaultValue="sheet">
           <TabsList
             className="border backdrop-blur-md mb-4"
@@ -189,11 +200,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
               borderColor: "rgba(255, 255, 255, 0.08)",
             }}
           >
-            <TabsTrigger value="sheet" className="data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Sheet</TabsTrigger>
+            <TabsTrigger value="sheet" className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Sheet</TabsTrigger>
             {char.profession && PROFESSION_CLASS[char.profession] && (
-              <TabsTrigger value="skills" className="data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Skills</TabsTrigger>
+              <TabsTrigger value="skills" className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Skills</TabsTrigger>
             )}
-            <TabsTrigger value="professions" className="data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Professions</TabsTrigger>
+            <TabsTrigger value="professions" className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Professions</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sheet">
@@ -201,7 +212,8 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
               {/* Left Column — Stats + Combat */}
               <div className="md:col-span-2 space-y-6">
                 {/* Stats Panel */}
-                <GlassPanel title="STATS" colorToken={colorToken} delay={0}>
+                <GlassCard>
+                  <SectionLabel label="Stats" icon={BarChart3} />
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-xs text-text-muted">{"\u{1F4CA}"} Stat Points</span>
                     {char.unspentStatPoints > 0 ? (
@@ -255,10 +267,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                       );
                     })}
                   </div>
-                </GlassPanel>
+                </GlassCard>
 
                 {/* Combat Panel */}
-                <GlassPanel title="COMBAT" colorToken={colorToken} delay={100}>
+                <GlassCard>
+                  <SectionLabel label="Combat" icon={Swords} />
                   <div className="space-y-3 mb-4">
                     <GameProgressBar
                       value={currentHp}
@@ -295,13 +308,14 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                       </div>
                     ))}
                   </div>
-                </GlassPanel>
+                </GlassCard>
               </div>
 
               {/* Right Column */}
               <div className="md:col-span-3 space-y-6">
                 {/* Abilities */}
-                <GlassPanel title={`ABILITIES (${abilities.length})`} colorToken={colorToken} delay={50}>
+                <GlassCard>
+                  <SectionLabel label={`Abilities (${abilities.length})`} icon={Sparkles} />
                   {abilities.length === 0 ? (
                     <div>
                       <p className="text-text-secondary text-sm mb-3">{"\u{1F512}"} Abilities unlock at Level 2!</p>
@@ -337,10 +351,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                       ))}
                     </div>
                   )}
-                </GlassPanel>
+                </GlassCard>
 
                 {/* Seal Collection */}
-                <GlassPanel title="SEAL COLLECTION" colorToken={colorToken} delay={150}>
+                <GlassCard>
+                  <SectionLabel label="Seal Collection" icon={Gem} />
                   <div className="space-y-2">
                     {[
                       { tier: "Common", val: seals?.common ?? 0, color: "bg-green-500", dim: "bg-green-900/20" },
@@ -367,10 +382,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                   <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-text-muted">
                     <span>Total Seals: {(seals?.common ?? 0) + (seals?.uncommon ?? 0) + (seals?.rare ?? 0) + (seals?.epic ?? 0) + (seals?.legendary ?? 0)}</span>
                   </div>
-                </GlassPanel>
+                </GlassCard>
 
                 {/* Inventory */}
-                <GlassPanel title="INVENTORY" colorToken={colorToken} delay={200}>
+                <GlassCard>
+                  <SectionLabel label="Inventory" icon={Package} />
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between py-1.5 border-b border-white/5">
                       <span className="text-text-secondary">{"\u{1F4B0}"} Gold Coins</span>
@@ -403,10 +419,11 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                       )}
                     </div>
                   </div>
-                </GlassPanel>
+                </GlassCard>
 
                 {/* Crafting Materials */}
-                <GlassPanel title={`MATERIALS (${materials.length})`} colorToken={colorToken} delay={250}>
+                <GlassCard>
+                  <SectionLabel label={`Materials (${materials.length})`} icon={Hammer} />
                   {materials.length === 0 ? (
                     <div>
                       <p className="text-text-secondary text-sm">{"\u26CF\uFE0F"} No materials yet!</p>
@@ -440,7 +457,8 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                         Total: {materials.reduce((s, m) => s + m.quantity, 0)} items across {materials.length} types
                       </div>
                     </div>
-                  )}</GlassPanel>
+                  )}
+                </GlassCard>
               </div>
             </div>
           </TabsContent>
@@ -455,23 +473,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
             <ProfessionTreePanel characterId={char.id} characterLevel={char.level} />
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
-  );
-}
-
-function GlassPanel({ title, colorToken, delay = 0, children }: { title: string; colorToken: string; delay?: number; children: React.ReactNode }) {
-  return (
-    <div
-      className="rounded-xl p-5 border backdrop-blur-md animate-slide-up"
-      style={{
-        background: "rgba(26, 10, 62, 0.7)",
-        borderColor: "rgba(255, 255, 255, 0.06)",
-        animationDelay: `${delay}ms`,
-      }}
-    >
-      <h2 className="text-xs font-bold text-text-title mb-4 tracking-wider">{title}</h2>
-      {children}
-    </div>
+      </motion.div>
+    </PageShell>
   );
 }

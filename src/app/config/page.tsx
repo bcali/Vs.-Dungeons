@@ -1,11 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "motion/react";
+import { Settings } from "lucide-react";
 import { useConfigStore } from "@/stores/config-store";
 import { fetchGameConfig, saveGameConfig } from "@/lib/supabase/queries";
+import { PageShell, fadeUp } from "@/components/ui/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
+import { GlassCard } from "@/components/ui/glass-card";
+import { Button } from "@/components/ui/button";
 import type { GameConfig } from "@/types/config";
-import { GameBackground } from "@/components/ui/game-background";
 
 type Tab = 'stats' | 'spellslots' | 'combat' | 'leveling' | 'loot';
 const TABS: { key: Tab; label: string }[] = [
@@ -45,43 +49,50 @@ export default function ConfigPage() {
 
   if (loading || !config) {
     return (
-      <div className="min-h-screen p-6 flex items-center justify-center">
-        <span className="text-text-muted animate-pulse">Loading config...</span>
-      </div>
+      <PageShell>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <span className="text-text-muted animate-pulse font-semibold">Loading config...</span>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen relative">
-      <GameBackground className="fixed inset-0 z-0" />
-      <div className="relative z-10 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-text-secondary hover:text-text-primary text-sm transition-colors">&larr; Home</Link>
-          <h1 className="text-base md:text-lg text-text-title tracking-wide">GAME CONFIG</h1>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={handleReset} className="rounded-lg bg-bg-input px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors">
-            Reset Defaults
-          </button>
-          <button onClick={handleSave} disabled={!isDirty || saving}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${isDirty ? 'bg-accent-gold text-bg-page hover:bg-accent-gold/80' : 'bg-bg-input text-text-muted cursor-default'}`}>
-            {saving ? "Saving..." : isDirty ? "Save" : "Saved"}
-          </button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="GAME CONFIG"
+        backHref="/"
+        backLabel="Home"
+        icon={Settings}
+        actions={
+          <div className="flex gap-3">
+            <button onClick={handleReset} className="rounded-lg bg-bg-input px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors">
+              Reset Defaults
+            </button>
+            {isDirty ? (
+              <Button variant="game-lego-gold" onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            ) : (
+              <button className="rounded-lg bg-bg-input px-4 py-2 text-sm text-text-muted cursor-default">
+                Saved
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-border-card pb-2">
+      <motion.div variants={fadeUp} className="flex gap-2 mb-6 border-b border-card-border pb-2">
         {TABS.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${
-              activeTab === tab.key ? "bg-bg-card text-accent-gold border-b-2 border-accent-gold" : "text-text-muted hover:text-zinc-300"
+            className={`px-4 py-2 rounded-t-lg font-mono text-[10px] uppercase tracking-widest transition-colors ${
+              activeTab === tab.key ? "bg-card-bg text-accent-gold border-b-2 border-accent-gold" : "text-text-muted hover:text-zinc-300"
             }`}>
             {tab.label}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       <div className="max-w-4xl mx-auto">
         {activeTab === 'stats' && <StatsTab config={config} update={updateConfigField} />}
@@ -90,8 +101,7 @@ export default function ConfigPage() {
         {activeTab === 'leveling' && <LevelingTab config={config} />}
         {activeTab === 'loot' && <LootTab config={config} />}
       </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 
@@ -112,8 +122,7 @@ function NumberField({ label, value, onChange, min, max }: { label: string; valu
 
 function StatsTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
   return (
-    <div className="rounded-xl bg-bg-card border border-border-card p-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Stat System (4 Stats)</h2>
+    <GlassCard title="Stat System (4 Stats)">
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <NumberField label="Base Stat Value" value={config.statBaseValue} onChange={(v) => update('statBaseValue', v)} min={1} max={10} />
@@ -155,14 +164,13 @@ function StatsTab({ config, update }: { config: GameConfig; update: UpdateFn }) 
           ))}
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 }
 
 function SpellSlotsTab({ config }: { config: GameConfig }) {
   return (
-    <div className="rounded-xl bg-bg-card border border-border-card p-6 space-y-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Spell Slot Progression</h2>
+    <GlassCard title="Spell Slot Progression" className="space-y-6">
       <div className="grid grid-cols-4 gap-2 text-xs">
         {config.spellSlotProgression.map((slots, i) => (
           <div key={i} className="flex items-center justify-between bg-bg-input/50 rounded px-3 py-2">
@@ -175,14 +183,13 @@ function SpellSlotsTab({ config }: { config: GameConfig }) {
         <p>Cantrips (slot cost 0) are always free.</p>
         <p>Short rest restores: <span className="text-zinc-300 font-medium">{config.shortRestSlotsRestore}</span> slots.</p>
       </div>
-    </div>
+    </GlassCard>
   );
 }
 
 function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn }) {
   return (
-    <div className="rounded-xl bg-bg-card border border-border-card p-6 space-y-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Combat Rules</h2>
+    <GlassCard title="Combat Rules" className="space-y-6">
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <NumberField label="Defend Bonus" value={config.defendBonus} onChange={(v) => update('defendBonus', v)} min={1} max={10} />
@@ -209,14 +216,14 @@ function CombatTab({ config, update }: { config: GameConfig; update: UpdateFn })
           <div>Ranged Defense: <span className="text-zinc-300">{config.rangedDefenseFormula}</span></div>
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 }
 
 function LevelingTab({ config }: { config: GameConfig }) {
   return (
-    <div className="rounded-xl bg-bg-card border border-border-card p-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">XP Thresholds</h2>
+    <GlassCard>
+      <h2 className="text-xs font-mono text-accent-gold uppercase tracking-widest mb-4">XP Thresholds</h2>
       <div className="grid grid-cols-4 gap-2 text-xs mb-6">
         {config.xpThresholds.map((xp, i) => (
           <div key={i} className="flex items-center justify-between bg-bg-input/50 rounded px-3 py-2">
@@ -225,7 +232,7 @@ function LevelingTab({ config }: { config: GameConfig }) {
           </div>
         ))}
       </div>
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">XP Awards</h2>
+      <h2 className="text-xs font-mono text-accent-gold uppercase tracking-widest mb-4 mt-6">XP Awards</h2>
       <div className="grid grid-cols-2 gap-3 text-sm">
         {Object.entries(config.xpAwards).map(([key, value]) => (
           <div key={key} className="flex justify-between bg-bg-input/50 rounded px-3 py-2">
@@ -234,14 +241,13 @@ function LevelingTab({ config }: { config: GameConfig }) {
           </div>
         ))}
       </div>
-    </div>
+    </GlassCard>
   );
 }
 
 function LootTab({ config }: { config: GameConfig }) {
   return (
-    <div className="rounded-xl bg-bg-card border border-border-card p-6">
-      <h2 className="text-sm font-semibold text-accent-gold mb-4 uppercase tracking-wider">Loot Tables</h2>
+    <GlassCard title="Loot Tables">
       <div className="space-y-4">
         {Object.entries(config.lootTables).map(([tier, table]) => (
           <div key={tier}>
@@ -257,6 +263,6 @@ function LootTab({ config }: { config: GameConfig }) {
           </div>
         ))}
       </div>
-    </div>
+    </GlassCard>
   );
 }

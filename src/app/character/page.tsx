@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "motion/react";
+import { Plus, Swords } from "lucide-react";
 import { fetchCampaign, fetchCharacters, createCharacter, deleteCharacter } from "@/lib/supabase/queries";
 import { maxHp, totalStat, xpForLevel } from "@/lib/game/stats";
 import type { Character, Campaign, Profession } from "@/types/game";
 import { PROFESSION_INFO } from "@/types/game";
 import { GameProgressBar } from "@/components/ui/game-progress-bar";
-import { GameBackground } from "@/components/ui/game-background";
+import { PageShell, fadeUp } from "@/components/ui/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { HeroAvatar } from "@/components/character/hero-avatar";
 import { cn } from "@/lib/utils";
 
@@ -66,72 +69,67 @@ export default function CharacterListPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="min-h-screen relative">
-      <GameBackground className="fixed inset-0 z-0" />
-
-      <div className="relative z-10 p-6 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-text-secondary hover:text-text-primary text-sm transition-colors">&larr; Home</Link>
-            <h1 className="text-lg md:text-2xl text-text-title tracking-wide">YOUR HEROES</h1>
-          </div>
-          <button
+    <PageShell>
+      <PageHeader
+        title="Your Heroes"
+        backHref="/"
+        actions={
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-accent-gold/20 border border-accent-gold/40 px-5 py-2.5 font-semibold text-accent-gold hover:bg-accent-gold/30 transition-all active:scale-95"
+            className="rounded-lg bg-accent-gold hover:bg-yellow-500 text-bg-page px-5 py-2.5 font-black text-sm uppercase tracking-wider border-b-4 border-yellow-700 shadow-lg active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
           >
-            + Create Hero
-          </button>
-        </div>
+            <Plus className="w-4 h-4" />
+            Create Hero
+          </motion.button>
+        }
+      />
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <span className="text-text-muted animate-pulse font-semibold">Loading heroes...</span>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-              {characters.map((char, i) => (
-                <div
-                  key={char.id}
-                  className="animate-slide-up"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
-                  <HeroCard char={char} onDelete={() => load()} />
-                </div>
-              ))}
-              {characters.length === 0 && (
-                <div className="col-span-2 text-center py-16 rounded-xl border border-white/5 bg-card-bg backdrop-blur-md">
-                  <p className="text-4xl mb-4">{"\u2694\uFE0F"}</p>
-                  <p className="text-text-secondary text-lg font-semibold mb-2">No heroes yet</p>
-                  <p className="text-text-muted text-sm">Create your first character to begin the adventure!</p>
-                </div>
-              )}
-            </div>
-
-            {characters.length > 0 && (
-              <div className="flex justify-center">
-                <Link
-                  href="/combat/setup"
-                  className="rounded-xl bg-accent-red px-10 py-4 font-black text-xl text-white hover:bg-accent-red/80 transition-all active:scale-95 animate-pulse-glow"
-                  style={{ "--glow-rgb": "231 76 60" } as React.CSSProperties}
-                >
-                  {"\u2694\uFE0F"} Start Combat
-                </Link>
+      {loading ? (
+        <motion.div variants={fadeUp} className="flex justify-center py-20">
+          <span className="text-text-muted animate-pulse font-semibold">Loading heroes...</span>
+        </motion.div>
+      ) : (
+        <>
+          <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            {characters.map((char) => (
+              <HeroCard key={char.id} char={char} onDelete={() => load()} />
+            ))}
+            {characters.length === 0 && (
+              <div className="col-span-2 text-center py-16 rounded-xl border border-card-border bg-card-bg backdrop-blur-md">
+                <Swords className="w-10 h-10 text-text-muted mx-auto mb-4" />
+                <p className="text-text-secondary text-lg font-semibold mb-2">No heroes yet</p>
+                <p className="text-text-muted text-sm">Create your first character to begin the adventure!</p>
               </div>
             )}
-          </>
-        )}
+          </motion.div>
 
-        {showCreate && campaign && (
-          <CreateCharacterModal
-            campaignId={campaign.id}
-            onClose={() => setShowCreate(false)}
-            onCreated={() => { setShowCreate(false); load(); }}
-          />
-        )}
-      </div>
-    </div>
+          {characters.length > 0 && (
+            <motion.div variants={fadeUp} className="flex justify-center">
+              <Link href="/combat/setup">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="bg-lego-green hover:bg-green-600 text-white font-black text-xl px-10 py-4 rounded-lg border-b-6 border-green-800 shadow-xl active:border-b-0 active:translate-y-1 transition-all flex items-center gap-3 uppercase tracking-wider"
+                >
+                  <Swords className="w-6 h-6" />
+                  Start Combat
+                </motion.button>
+              </Link>
+            </motion.div>
+          )}
+        </>
+      )}
+
+      {showCreate && campaign && (
+        <CreateCharacterModal
+          campaignId={campaign.id}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { setShowCreate(false); load(); }}
+        />
+      )}
+    </PageShell>
   );
 }
 
@@ -147,7 +145,6 @@ function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void })
   const colorToken = PROFESSION_COLOR[profKey] || "prof-knight";
   const flavorTitle = getFlavorTitle(char.profession, char.level);
 
-  // Compute quick power summary
   const atk = totalStat(char.stats.str, char.gearBonus.str);
   const def = totalStat(char.stats.tgh, char.gearBonus.tgh) + 8;
   const spd = totalStat(char.stats.spd, char.gearBonus.spd);
@@ -164,7 +161,6 @@ function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void })
         boxShadow: `0 0 20px color-mix(in srgb, var(--${colorToken}) 10%, transparent)`,
       }}
     >
-      {/* Avatar area */}
       <div className="flex items-start gap-4 mb-4">
         <HeroAvatar profession={char.profession} level={char.level} size="md" />
         <div className="flex-1 min-w-0">
@@ -177,7 +173,6 @@ function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void })
         </div>
       </div>
 
-      {/* HP + XP bars */}
       <div className="space-y-2 mb-3">
         <GameProgressBar
           value={currentHp}
@@ -197,14 +192,12 @@ function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void })
         />
       </div>
 
-      {/* Quick power summary */}
       <div className="flex items-center gap-4 text-xs text-text-secondary mb-4">
         <span>{"\u2694\uFE0F"} ATK: {atk}</span>
         <span>{"\u{1F6E1}\uFE0F"} DEF: {def}</span>
         <span>{"\u{1F3C3}"} SPD: {spd}</span>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2">
         <Link
           href={`/character/${char.id}`}
@@ -250,11 +243,11 @@ function CreateCharacterModal({ campaignId, onClose, onCreated }: { campaignId: 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="rounded-xl border border-white/10 p-6 w-full max-w-md space-y-4 animate-slide-up"
+        className="rounded-xl border border-white/10 p-6 w-full max-w-md space-y-4 animate-slide-up backdrop-blur-md"
         style={{ background: "linear-gradient(135deg, rgba(26, 10, 62, 0.95), rgba(13, 2, 33, 0.98))" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-sm font-bold text-text-title">CREATE NEW HERO</h2>
+        <h2 className="text-xs font-mono text-accent-gold uppercase tracking-widest">Create New Hero</h2>
         <div>
           <label className="text-xs text-text-secondary block mb-1">Hero Name *</label>
           <input type="text" value={heroName} onChange={(e) => setHeroName(e.target.value)} autoFocus

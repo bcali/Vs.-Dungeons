@@ -9,6 +9,11 @@ import { isSpeechRecognitionSupported, createSpeechRecognition } from "@/lib/voi
 import { speakNarration, stopNarration } from "@/lib/voice/speech-synthesis";
 import { RewardsScreen } from "@/components/combat/rewards-screen";
 import { Badge } from "@/components/ui/badge";
+import { motion } from "motion/react";
+import { Swords } from "lucide-react";
+import { PageShell, fadeUp } from "@/components/ui/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -202,17 +207,14 @@ export default function CombatTrackerPage() {
   // No active combat
   if (status !== 'active') {
     return (
-      <div className="min-h-screen p-4 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-text-secondary hover:text-white text-sm">&larr; Home</Link>
-            <h1 className="text-xl font-bold">
-              <span className="text-accent-red">COMBAT</span>
-              <span className="text-text-secondary ml-2">&mdash; {status === 'completed' ? 'Completed' : 'No Active Encounter'}</span>
-            </h1>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <PageShell>
+        <PageHeader
+          title="COMBAT"
+          backHref="/"
+          backLabel="Home"
+          subtitle={status === 'completed' ? 'Completed' : 'No Active Encounter'}
+        />
+        <motion.div variants={fadeUp} className="flex-1 flex flex-col items-center justify-center gap-6 min-h-[50vh]">
           {status === 'completed' && (
             <div className="text-center">
               <p className="text-2xl font-bold text-accent-gold mb-2">{heroesAlive > 0 ? 'Victory!' : 'Defeat...'}</p>
@@ -220,17 +222,20 @@ export default function CombatTrackerPage() {
             </div>
           )}
           <div className="flex gap-4">
-            <Link href="/combat/setup" className="rounded-xl bg-accent-red px-8 py-4 text-lg font-bold hover:bg-accent-red/80 transition-colors">
-              Set Up New Encounter
-            </Link>
+            <Button variant="game-lego-green" size="game-lg" asChild>
+              <Link href="/combat/setup">
+                <Swords className="w-5 h-5" />
+                Set Up New Encounter
+              </Link>
+            </Button>
             {status === 'completed' && (
               <button onClick={resetCombat} className="rounded-xl bg-bg-input px-8 py-4 text-lg font-bold hover:bg-bg-input/80 transition-colors">
                 Clear
               </button>
             )}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </PageShell>
     );
   }
 
@@ -240,7 +245,7 @@ export default function CombatTrackerPage() {
       <div className="shrink-0 flex items-center justify-between mb-3">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold">
-            <span className="text-accent-red">COMBAT</span>
+            <span className="text-accent-red font-mono">COMBAT</span>
             <span className="text-text-secondary ml-2">&mdash; {encounterName}</span>
           </h1>
         </div>
