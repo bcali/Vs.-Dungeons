@@ -14,6 +14,7 @@ import { buildHeroCombatAbilities, buildMonsterSpecialAbilities } from "@/lib/ga
 import { useCombatStore } from "@/stores/combat-store";
 import { Badge } from "@/components/ui/badge";
 import { ExplorationBackground } from "@/components/ui/exploration-background";
+import { HeroAvatar } from "@/components/character/hero-avatar";
 import type { Character, Monster, Campaign, Profession, Ability } from "@/types/game";
 import type { CombatParticipant } from "@/types/combat";
 
@@ -71,6 +72,7 @@ export default function EncounterSetupPage() {
     const c = await fetchCampaign();
     setCampaign(c);
     if (c) {
+      if (c.currentQuest) setEncounterName(c.currentQuest);
       const [chars, monsters] = await Promise.all([
         fetchCharacters(c.id),
         fetchMonsters(),
@@ -228,17 +230,17 @@ export default function EncounterSetupPage() {
           </div>
 
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Swords className="w-4 h-4 text-accent-gold" />
-              <span className="text-xs font-mono text-accent-gold uppercase tracking-widest">New Encounter</span>
-              <Swords className="w-4 h-4 text-accent-gold" />
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Compass className="w-4 h-4 text-accent-gold" />
+              <span className="text-xs font-mono text-accent-gold uppercase tracking-widest">Quest Briefing</span>
+              <Compass className="w-4 h-4 text-accent-gold" />
             </div>
             <input
               type="text"
               placeholder="ENCOUNTER NAME"
               value={encounterName}
               onChange={(e) => setEncounterName(e.target.value)}
-              className="bg-transparent text-center text-2xl md:text-3xl font-mono text-lego-yellow placeholder-lego-yellow/30 focus:outline-none w-full max-w-lg mx-auto tracking-wider"
+              className="bg-transparent text-center text-2xl md:text-4xl font-mono text-lego-yellow placeholder-lego-yellow/30 focus:outline-none w-full max-w-lg mx-auto tracking-wider leading-tight uppercase"
               style={{ textShadow: "3px 3px 0px #000, 0px 0px 20px rgba(242, 205, 55, 0.4)" }}
             />
           </div>
@@ -369,15 +371,15 @@ export default function EncounterSetupPage() {
         </motion.div>
 
         {/* ── Bottom Start Button ── */}
-        <motion.div variants={fadeUp} className="mt-4">
+        <motion.div variants={fadeUp} className="mt-4 flex justify-center">
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={handleStartCombat}
             disabled={totalEnemies === 0 || heroes.length === 0}
-            className="w-full bg-lego-green hover:bg-green-600 text-white font-black text-lg px-8 py-4 rounded-lg border-b-6 border-green-800 shadow-xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 uppercase tracking-wider disabled:opacity-40 disabled:pointer-events-none"
+            className="bg-lego-green hover:bg-green-600 text-white font-black text-xl px-8 py-4 rounded-lg border-b-6 border-green-800 shadow-xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 uppercase tracking-wider disabled:opacity-40 disabled:pointer-events-none"
           >
-            <Swords className="w-5 h-5" />
+            <Swords className="w-6 h-6" />
             Roll Initiative &amp; Start Combat
           </motion.button>
         </motion.div>
@@ -411,19 +413,14 @@ function HeroCard({ hero, abilities, expanded, onToggle }: {
       className={`rounded-xl bg-card-bg border border-card-border backdrop-blur-md p-4 border-l-4 ${borderClass} cursor-pointer hover:border-card-border/50 transition-colors`}
       onClick={onToggle}
     >
-      {/* Name + Profession */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <p className="font-bold text-sm text-text-primary">{hero.heroName || "Unnamed"}</p>
+      {/* Avatar + Name + Profession */}
+      <div className="flex items-center gap-3 mb-2">
+        <HeroAvatar profession={prof} level={hero.level} size="sm" animate={false} glow={false} />
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm text-text-primary truncate">{hero.heroName || "Unnamed"}</p>
           <p className="text-[10px] text-text-muted uppercase tracking-wider">
             Lv{hero.level} {hero.profession}
           </p>
-        </div>
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-          style={{ background: `color-mix(in srgb, var(--${PROF_COLOR[prof] || "accent-gold"}) 30%, transparent)` }}
-        >
-          {hero.level}
         </div>
       </div>
 
