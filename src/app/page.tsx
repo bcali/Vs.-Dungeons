@@ -91,69 +91,84 @@ export default function Home() {
             className="text-center"
           >
             <div className="relative inline-block pointer-events-auto">
-              <h1 className="text-7xl md:text-9xl font-black tracking-tighter italic transform -skew-x-6 drop-shadow-2xl filter brightness-110">
+              {/* VS. — big, golden, stacked block shadow */}
+              <h1 className="font-mono font-black tracking-tight leading-none select-none">
                 <span
-                  className="block text-lego-yellow"
+                  className="block text-7xl md:text-[10rem] text-lego-yellow"
                   style={{
-                    textShadow: "4px 4px 0px #000, -2px -2px 0 #fff",
-                    WebkitTextStroke: "3px black",
+                    textShadow:
+                      "3px 3px 0 #b8860b, 6px 6px 0 #000, 0 0 40px rgba(242,205,55,0.3)",
                   }}
                 >
                   VS.
                 </span>
+
+                {/* Pixel sword divider */}
+                <div className="flex items-center justify-center gap-3 -my-1 md:-my-2">
+                  <div className="h-[3px] w-12 md:w-20 bg-gradient-to-r from-transparent via-accent-gold to-accent-gold/40" />
+                  <svg viewBox="0 0 24 12" className="w-8 md:w-12 h-4 md:h-6 text-accent-gold" fill="currentColor">
+                    {/* Pixel blade */}
+                    <rect x="0" y="5" width="16" height="2" />
+                    <rect x="14" y="4" width="2" height="4" />
+                    <rect x="16" y="3" width="2" height="6" />
+                    {/* Crossguard */}
+                    <rect x="12" y="1" width="2" height="10" />
+                    {/* Handle */}
+                    <rect x="18" y="4.5" width="4" height="3" rx="0.5" opacity="0.6" />
+                    <rect x="22" y="4" width="2" height="4" rx="1" opacity="0.4" />
+                  </svg>
+                  <div className="h-[3px] w-12 md:w-20 bg-gradient-to-l from-transparent via-accent-gold to-accent-gold/40" />
+                </div>
+
                 <span
-                  className="block text-lego-red"
+                  className="block text-5xl md:text-8xl text-lego-red"
                   style={{
                     textShadow:
-                      "6px 6px 0px #000, 0px 0px 20px rgba(227, 0, 11, 0.5)",
-                    WebkitTextStroke: "3px black",
+                      "3px 3px 0 #8b0000, 6px 6px 0 #000, 0 0 30px rgba(227,0,11,0.25)",
                   }}
                 >
                   DUNGEONS
                 </span>
               </h1>
 
-              {/* Decorative floating blocks */}
+              {/* Floating blocks — slightly subtler */}
               <motion.div
-                animate={{ y: [0, -15, 0], rotate: [12, 15, 12] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 3,
-                  ease: "easeInOut",
-                }}
-                className="absolute -top-12 -right-12 w-16 h-16 bg-lego-blue border-4 border-black/20 shadow-xl rounded-sm"
+                animate={{ y: [0, -12, 0], rotate: [8, 12, 8] }}
+                transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+                className="absolute -top-8 -right-10 w-12 h-12 md:w-14 md:h-14 bg-lego-blue rounded-sm shadow-lg opacity-80"
+                style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
               >
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-10 h-10 rounded-full bg-black/10 shadow-inner" />
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/15" />
                 </div>
               </motion.div>
 
               <motion.div
-                animate={{ y: [0, 15, 0], rotate: [-12, -15, -12] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 4,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-                className="absolute -bottom-8 -left-16 w-12 h-12 bg-lego-green border-4 border-black/20 shadow-xl rounded-sm"
+                animate={{ y: [0, 12, 0], rotate: [-8, -12, -8] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 1.2 }}
+                className="absolute -bottom-6 -left-12 w-10 h-10 md:w-12 md:h-12 bg-lego-green rounded-sm shadow-lg opacity-80"
+                style={{ boxShadow: "3px 3px 0 rgba(0,0,0,0.4)" }}
               >
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-black/10 shadow-inner" />
+                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-black/15" />
                 </div>
               </motion.div>
             </div>
 
-            <p
-              className="mt-4 text-xl md:text-3xl font-black tracking-wide italic transform -skew-x-6 uppercase"
-              style={{
-                textShadow: "3px 3px 0px #000, -1px -1px 0 #000, 0px 0px 10px rgba(0,0,0,0.8)",
-                WebkitTextStroke: "1.5px black",
-              }}
-            >
-              <span className="text-white">Build your heroes. Fight the monsters.</span>
+            <p className="mt-6 font-mono font-bold text-lg md:text-2xl tracking-wide uppercase">
+              <span
+                className="text-text-secondary"
+                style={{ textShadow: "2px 2px 0 #000" }}
+              >
+                Build your heroes. Fight the monsters.
+              </span>
               <br />
-              <span className="text-lego-yellow">Save the realm.</span>
+              <span
+                className="text-accent-gold"
+                style={{ textShadow: "2px 2px 0 #000, 0 0 12px rgba(242,205,55,0.3)" }}
+              >
+                Save the realm.
+              </span>
             </p>
           </motion.div>
         </div>
