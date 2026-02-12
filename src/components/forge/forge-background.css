@@ -244,3 +244,72 @@
   );
   pointer-events: none;
 }
+
+/* ============================================================
+   WORKBENCH — Furnace, Bellows, Anvil, Melting Animations
+   ============================================================ */
+
+/* === BELLOWS — breathing puff === */
+.forge-bellows-puff {
+  animation: forge-bellowsPuff 2.5s ease-in-out infinite;
+  transform-origin: left center;
+}
+@keyframes forge-bellowsPuff {
+  0%, 100% { transform: scaleX(1); }
+  35% { transform: scaleX(0.65); }
+  50% { transform: scaleX(0.65); }
+  70% { transform: scaleX(1.05); }
+}
+
+/* Air puff burst on compress */
+.forge-air-puff {
+  animation: forge-airPuff 2.5s ease-out infinite;
+}
+@keyframes forge-airPuff {
+  0%, 30% { opacity: 0; transform: translateX(0) scale(0.3); }
+  35% { opacity: 0.8; transform: translateX(-8px) scale(1); }
+  60% { opacity: 0; transform: translateX(-30px) scale(1.5); }
+  100% { opacity: 0; }
+}
+
+/* === FURNACE — fire flicker === */
+.forge-furnace-fire {
+  animation: forge-furnaceFlicker 0.8s ease-in-out infinite alternate;
+}
+@keyframes forge-furnaceFlicker {
+  0% { opacity: 0.7; transform: scaleY(0.9) scaleX(0.95); }
+  30% { opacity: 1; transform: scaleY(1.1) scaleX(1.05); }
+  60% { opacity: 0.85; transform: scaleY(0.95) scaleX(1); }
+  100% { opacity: 1; transform: scaleY(1.05) scaleX(0.98); }
+}
+
+/* Furnace glow pulse */
+.forge-furnace-glow {
+  animation: forge-furnaceGlow 2s ease-in-out infinite alternate;
+}
+@keyframes forge-furnaceGlow {
+  0% { opacity: 0.4; filter: blur(8px); }
+  100% { opacity: 0.7; filter: blur(12px); }
+}
+
+/* === MELT DRIPS — falling drops === */
+.forge-melt-drip {
+  animation: forge-meltDrip var(--drip-dur, 2s) ease-in infinite;
+  animation-delay: var(--drip-delay, 0s);
+}
+@keyframes forge-meltDrip {
+  0% { transform: translateY(0) scaleY(1); opacity: 0; }
+  5% { opacity: 1; }
+  40% { transform: translateY(20px) scaleY(1.4); opacity: 0.9; }
+  70% { transform: translateY(45px) scaleY(0.8); opacity: 0.5; }
+  100% { transform: translateY(60px) scaleY(0.3); opacity: 0; }
+}
+
+/* === WORKBENCH ANVIL GLOW === */
+.forge-wb-anvil-glow {
+  animation: forge-wbAnvilGlow 3s ease-in-out infinite alternate;
+}
+@keyframes forge-wbAnvilGlow {
+  0% { filter: drop-shadow(0 4px 12px rgba(255, 100, 30, 0.2)); }
+  100% { filter: drop-shadow(0 6px 20px rgba(255, 100, 30, 0.4)); }
+}

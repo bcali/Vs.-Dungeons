@@ -9,14 +9,12 @@ import {
   fetchCharacter,
   fetchSeals,
   fetchCharacterMaterials,
-  fetchCharacterEquipment,
   addInventoryItem,
 } from "@/lib/supabase/queries";
 import type {
   Character,
   CharacterSeals,
   CharacterMaterial,
-  CraftingProfession,
 } from "@/types/game";
 import { TIER_COLORS, CATEGORY_ICONS } from "@/types/game";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -265,66 +263,69 @@ export default function ForgePage({ params }: { params: Promise<{ id: string }> 
             </GlassCard>
           </motion.div>
 
-          {/* Right — Recipe browser + Workbench */}
+          {/* Right — Recipe browser */}
           <motion.div variants={fadeUp} className="lg:col-span-2">
             <GlassCard>
-              {selectedRecipe ? (
+              {/* Category tabs */}
+              <Tabs
+                value={activeCategory}
+                onValueChange={(v) => {
+                  setActiveCategory(v as ForgeCategory);
+                  setSelectedRecipe(null);
+                }}
+              >
+                <TabsList
+                  className="border backdrop-blur-md mb-4"
+                  style={{
+                    background: "rgba(26, 10, 62, 0.8)",
+                    borderColor: "rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  {(Object.entries(CATEGORY_INFO) as [ForgeCategory, { name: string; icon: string }][]).map(
+                    ([cat, info]) => (
+                      <TabsTrigger
+                        key={cat}
+                        value={cat}
+                        className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-orange-400"
+                      >
+                        <span className="mr-1">{info.icon}</span>
+                        {info.name}
+                      </TabsTrigger>
+                    )
+                  )}
+                </TabsList>
+
+                {(Object.keys(CATEGORY_INFO) as ForgeCategory[]).map(cat => (
+                  <TabsContent key={cat} value={cat}>
+                    <SectionLabel
+                      label={`${CATEGORY_INFO[cat].name} (${
+                        cat === activeCategory ? recipes.length : '...'
+                      })`}
+                      icon={Hammer}
+                    />
+                    <RecipeList
+                      recipes={recipes}
+                      selectedRecipeId={selectedRecipe?.id ?? null}
+                      onSelect={setSelectedRecipe}
+                      canAfford={checkAfford}
+                    />
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </GlassCard>
+
+            {/* Workbench — below recipe list, no glass card so background shows through */}
+            <AnimatePresence>
+              {selectedRecipe && (
                 <CraftingWorkbench
                   recipe={selectedRecipe}
                   materials={materials}
                   seals={seals}
                   isCrafting={isCrafting}
                   onCraft={handleCraft}
-                  onBack={() => setSelectedRecipe(null)}
                 />
-              ) : (
-                <>
-                  {/* Category tabs */}
-                  <Tabs
-                    value={activeCategory}
-                    onValueChange={(v) => setActiveCategory(v as ForgeCategory)}
-                  >
-                    <TabsList
-                      className="border backdrop-blur-md mb-4"
-                      style={{
-                        background: "rgba(26, 10, 62, 0.8)",
-                        borderColor: "rgba(255, 255, 255, 0.08)",
-                      }}
-                    >
-                      {(Object.entries(CATEGORY_INFO) as [ForgeCategory, { name: string; icon: string }][]).map(
-                        ([cat, info]) => (
-                          <TabsTrigger
-                            key={cat}
-                            value={cat}
-                            className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-orange-400"
-                          >
-                            <span className="mr-1">{info.icon}</span>
-                            {info.name}
-                          </TabsTrigger>
-                        )
-                      )}
-                    </TabsList>
-
-                    {(Object.keys(CATEGORY_INFO) as ForgeCategory[]).map(cat => (
-                      <TabsContent key={cat} value={cat}>
-                        <SectionLabel
-                          label={`${CATEGORY_INFO[cat].name} (${
-                            cat === activeCategory ? recipes.length : '...'
-                          })`}
-                          icon={Hammer}
-                        />
-                        <RecipeList
-                          recipes={recipes}
-                          selectedRecipeId={null}
-                          onSelect={setSelectedRecipe}
-                          canAfford={checkAfford}
-                        />
-                      </TabsContent>
-                    ))}
-                  </Tabs>
-                </>
               )}
-            </GlassCard>
+            </AnimatePresence>
           </motion.div>
         </div>
       </motion.div>
