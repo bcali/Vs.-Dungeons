@@ -1,7 +1,7 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, SkillBranch, SkillType, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial, Profession, MonsterCategory, DamageType, ItemType } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, SkillBranch, SkillType, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial, Profession, MonsterCategory, DamageType, ItemType, CharacterEquipmentItem, EquipmentSlot, EquipmentRarity, SpecialEffect } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 import { maxHp } from '@/lib/game/stats';
 
@@ -739,5 +739,95 @@ export async function logEncounterLoot(
       session_id: sessionId ?? null,
     });
   if (error) { logQueryError('logEncounterLoot', error); return false; }
+  return true;
+}
+
+// ─── Equipment System ──────────────────────────────────────────────────
+
+function rowToEquipmentItem(row: DbRow): CharacterEquipmentItem {
+  return {
+    id: row.id as string,
+    characterId: row.character_id as string,
+    templateId: row.template_id as string,
+    name: row.name as string,
+    slot: row.slot as EquipmentSlot,
+    rarity: row.rarity as EquipmentRarity,
+    level: row.level as number,
+    statBonuses: (row.stat_bonuses as Partial<Stats>) ?? {},
+    specialEffect: (row.special_effect as SpecialEffect) ?? null,
+    equippedSlot: (row.equipped_slot as EquipmentSlot) ?? null,
+    createdAt: row.created_at as string,
+  };
+}
+
+/** Fetch all equipment for a character (equipped + stash) */
+export async function fetchCharacterEquipment(characterId: string): Promise<CharacterEquipmentItem[]> {
+  const { data, error } = await getSupabase()
+    .from('character_equipment')
+    .select('*')
+    .eq('character_id', characterId)
+    .order('created_at', { ascending: false });
+  if (error) { logQueryError('fetchCharacterEquipment', error); return []; }
+  if (!data) return [];
+  return data.map(rowToEquipmentItem);
+}
+
+/** Equip an item to a slot (auto-unequips existing, recalculates gear bonus) */
+export async function equipItem(characterId: string, itemId: string, slot: EquipmentSlot): Promise<boolean> {
+  const { error } = await getSupabase()
+    .rpc('equip_item', {
+      p_character_id: characterId,
+      p_item_id: itemId,
+      p_slot: slot,
+    });
+  if (error) { logQueryError('equipItem', error); return false; }
+  return true;
+}
+
+/** Unequip an item from a slot (moves to stash, recalculates gear bonus) */
+export async function unequipItem(characterId: string, slot: EquipmentSlot): Promise<boolean> {
+  const { error } = await getSupabase()
+    .rpc('unequip_item', {
+      p_character_id: characterId,
+      p_slot: slot,
+    });
+  if (error) { logQueryError('unequipItem', error); return false; }
+  return true;
+}
+
+/** Craft a new equipment item (insert into character_equipment) */
+export async function craftEquipment(
+  characterId: string,
+  templateId: string,
+  name: string,
+  slot: EquipmentSlot,
+  rarity: EquipmentRarity,
+  level: number,
+  statBonuses: Partial<Stats>,
+  specialEffect: SpecialEffect | null,
+): Promise<string | null> {
+  const { data, error } = await getSupabase()
+    .rpc('craft_equipment', {
+      p_character_id: characterId,
+      p_template_id: templateId,
+      p_name: name,
+      p_slot: slot,
+      p_rarity: rarity,
+      p_level: level,
+      p_stat_bonuses: statBonuses,
+      p_special_effect: specialEffect,
+    });
+  if (error) { logQueryError('craftEquipment', error); return null; }
+  return data as string;
+}
+
+/** Salvage (delete) an equipment item */
+export async function salvageEquipment(characterId: string, itemId: string): Promise<boolean> {
+  const { error } = await getSupabase()
+    .rpc('salvage_equipment', {
+      p_character_id: characterId,
+      p_item_id: itemId,
+    });
+  if (error) { logQueryError('salvageEquipment', error); return false; }
   return true;
 }

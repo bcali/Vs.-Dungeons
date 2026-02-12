@@ -364,3 +364,84 @@ export const CATEGORY_ICONS: Record<MaterialCategory, string> = {
   arcane:       '\u2728',
   seal:         '\u{1F52E}',
 };
+
+// ─── Equipment System ─────────────────────────────────────────────────
+
+export type EquipmentSlot = 'head' | 'chest' | 'hands' | 'feet' | 'weapon' | 'shield' | 'ring' | 'trinket';
+export type EquipmentRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export const EQUIPMENT_SLOTS: EquipmentSlot[] = ['head', 'chest', 'hands', 'feet', 'weapon', 'shield', 'ring', 'trinket'];
+
+export const EQUIPMENT_SLOT_INFO: Record<EquipmentSlot, { name: string; icon: string; description: string; primaryStat: StatKey }> = {
+  head:    { name: 'Head',    icon: '\u{1FA96}', description: 'Helmets, hoods, crowns',      primaryStat: 'smt' },
+  chest:   { name: 'Chest',   icon: '\u{1F6E1}', description: 'Armor, robes, tunics',        primaryStat: 'tgh' },
+  hands:   { name: 'Hands',   icon: '\u{1F9E4}', description: 'Gauntlets, gloves, bracers',  primaryStat: 'str' },
+  feet:    { name: 'Feet',    icon: '\u{1F462}', description: 'Boots, greaves, sandals',     primaryStat: 'spd' },
+  weapon:  { name: 'Weapon',  icon: '\u2694\uFE0F', description: 'Swords, bows, staffs, daggers', primaryStat: 'str' },
+  shield:  { name: 'Shield',  icon: '\u{1F6E1}\uFE0F', description: 'Shields, bucklers, wards',   primaryStat: 'tgh' },
+  ring:    { name: 'Ring',    icon: '\u{1F48D}', description: 'Enchanted rings',             primaryStat: 'smt' },
+  trinket: { name: 'Trinket', icon: '\u{1F4FF}', description: 'Amulets, charms, tokens',    primaryStat: 'spd' },
+};
+
+export const RARITY_STAT_COUNT: Record<EquipmentRarity, number> = {
+  common: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+};
+
+export const EQUIPMENT_RARITY_INFO: Record<EquipmentRarity, { name: string; color: string; borderGlow: string }> = {
+  common:    { name: 'Common',    color: '#22c55e', borderGlow: 'rgba(34, 197, 94, 0.3)' },
+  rare:      { name: 'Rare',      color: '#eab308', borderGlow: 'rgba(234, 179, 8, 0.3)' },
+  epic:      { name: 'Epic',      color: '#a855f7', borderGlow: 'rgba(168, 85, 247, 0.3)' },
+  legendary: { name: 'Legendary', color: '#ef4444', borderGlow: 'rgba(239, 68, 60, 0.4)' },
+};
+
+export interface SpecialEffect {
+  id: string;
+  name: string;
+  description: string;
+  effectType: 'damage_boost' | 'damage_reduction' | 'heal_per_turn' | 'ability_boost' | 'all_stats' | 'crit_chance';
+  value: number;
+  targetAbility?: string;
+}
+
+export interface EquipmentTemplate {
+  id: string;
+  slot: EquipmentSlot;
+  rarity: EquipmentRarity;
+  levelMin: number;
+  levelMax: number;
+  nameTemplate: string;
+  materialPrefix: string;
+  statAllocations: Partial<Stats>;
+  specialEffect: SpecialEffect | null;
+}
+
+export interface CharacterEquipmentItem {
+  id: string;
+  characterId: string;
+  templateId: string;
+  name: string;
+  slot: EquipmentSlot;
+  rarity: EquipmentRarity;
+  level: number;
+  statBonuses: Partial<Stats>;
+  specialEffect: SpecialEffect | null;
+  equippedSlot: EquipmentSlot | null;
+  createdAt: string;
+}
+
+export interface EquipmentRecipe {
+  id: string;
+  templateId: string;
+  requiredLevel: number;
+  craftingProfession: CraftingProfession;
+  materialCosts: { materialId: string; quantity: number }[];
+  sealCosts: Partial<Record<SealTier, number>>;
+}
+
+export interface CraftingCost {
+  materials: { tier: MaterialTier; quantity: number }[];
+  seals: Partial<Record<SealTier, number>>;
+}

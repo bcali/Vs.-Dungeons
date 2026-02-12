@@ -3,15 +3,20 @@
 import Link from "next/link";
 import { use, useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { BarChart3, Swords, Sparkles, Gem, Package, Hammer } from "lucide-react";
-import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials } from "@/lib/supabase/queries";
+import { BarChart3, Swords, Sparkles, Gem, Package, Hammer, Shield } from "lucide-react";
+import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials, fetchCharacterEquipment } from "@/lib/supabase/queries";
 import { maxHp, maxSpellSlots, getMov, totalStats, totalStat, statBonus, xpForLevel, rankForLevel } from "@/lib/game/stats";
 import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/types/game";
-import type { Character, Ability, InventoryItem, CharacterSeals, CharacterMaterial, StatKey } from "@/types/game";
+import type { Character, Ability, InventoryItem, CharacterSeals, CharacterMaterial, CharacterEquipmentItem, EquipmentSlot, CraftingProfession, StatKey } from "@/types/game";
 import { TIER_COLORS, CATEGORY_ICONS } from "@/types/game";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkillTreePanel } from "@/components/character/skill-tree-panel";
 import { ProfessionTreePanel } from "@/components/character/profession-tree-panel";
+import { EquipmentSlots } from "@/components/character/equipment-slots";
+import { EquipmentStash } from "@/components/character/equipment-stash";
+import { ItemDetailCard } from "@/components/character/item-detail-card";
+import { CraftEquipmentPanel } from "@/components/character/craft-equipment-panel";
+import { useEquipmentStore } from "@/stores/equipment-store";
 import { GameProgressBar } from "@/components/ui/game-progress-bar";
 import { PageShell, fadeUp } from "@/components/ui/page-shell";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -65,6 +70,10 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<CharacterEquipmentItem | null>(null);
+  const [isCrafting, setIsCrafting] = useState(false);
+
+  const equipmentStore = useEquipmentStore();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +89,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
     setInventory(inv);
     setSeals(s);
     setMaterials(mats);
+    await equipmentStore.loadEquipment(id);
     setLoading(false);
     setDirty(false);
   }, [id]);
@@ -205,6 +215,14 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
               <TabsTrigger value="skills" className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Skills</TabsTrigger>
             )}
             <TabsTrigger value="professions" className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">Professions</TabsTrigger>
+            <TabsTrigger value="equipment" className="font-mono text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10 data-[state=active]:text-accent-gold">
+              Equipment
+              {equipmentStore.getEquippedItems().length > 0 && (
+                <span className="ml-1.5 text-[8px] bg-accent-gold/20 text-accent-gold px-1.5 py-0.5 rounded-full">
+                  {equipmentStore.getEquippedItems().length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="sheet">
@@ -471,6 +489,125 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
 
           <TabsContent value="professions">
             <ProfessionTreePanel characterId={char.id} characterLevel={char.level} />
+          </TabsContent>
+
+          <TabsContent value="equipment">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Equipment Slots */}
+              <div className="space-y-6">
+                <GlassCard>
+                  <SectionLabel label="Equipped Gear" icon={Shield} />
+                  <EquipmentSlots
+                    equipped={Object.fromEntries(
+                      equipmentStore.getEquippedItems().map(item => [item.equippedSlot!, item])
+                    )}
+                    onSlotClick={(slot, item) => {
+                      if (item) {
+                        setSelectedItem(item);
+                      }
+                    }}
+                  />
+                  {/* Gear bonus summary */}
+                  {equipmentStore.getEquippedItems().length > 0 && (() => {
+                    const bonus = equipmentStore.getGearBonus();
+                    const hasBonus = bonus.str > 0 || bonus.spd > 0 || bonus.tgh > 0 || bonus.smt > 0;
+                    if (!hasBonus) return null;
+                    return (
+                      <div className="mt-4 pt-3 border-t border-white/5">
+                        <p className="text-[10px] text-text-dim uppercase tracking-wider mb-2">Total Gear Bonus</p>
+                        <div className="flex gap-3">
+                          {STAT_KEYS.map(key => {
+                            const val = bonus[key];
+                            if (val === 0) return null;
+                            return (
+                              <span key={key} className="text-xs text-green-400 font-medium">
+                                +{val} {STAT_LABELS[key].abbr}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </GlassCard>
+
+                {/* Crafting */}
+                <GlassCard>
+                  <CraftEquipmentPanel
+                    characterLevel={char.level}
+                    craftingProfessions={['blacksmithing', 'enchanting'] as CraftingProfession[]}
+                    materials={materials}
+                    seals={seals}
+                    isCrafting={isCrafting}
+                    onCraft={async (recipe) => {
+                      setIsCrafting(true);
+                      const success = await equipmentStore.craftItem(
+                        char.id,
+                        recipe.template,
+                        char.level,
+                      );
+                      setIsCrafting(false);
+                      if (success) {
+                        // Reload seals/materials after crafting
+                        const [s, mats] = await Promise.all([
+                          fetchSeals(char.id),
+                          fetchCharacterMaterials(char.id),
+                        ]);
+                        setSeals(s);
+                        setMaterials(mats);
+                      }
+                    }}
+                  />
+                </GlassCard>
+              </div>
+
+              {/* Right: Loot Chest (Stash) */}
+              <GlassCard>
+                <EquipmentStash
+                  items={equipmentStore.getStashItems()}
+                  onItemClick={(item) => setSelectedItem(item)}
+                  onEquip={async (item) => {
+                    await equipmentStore.equipItem(char.id, item.id, item.slot);
+                    // Reload character to get updated gear bonus
+                    const updated = await fetchCharacter(char.id);
+                    if (updated) setChar(updated);
+                  }}
+                />
+              </GlassCard>
+            </div>
+
+            {/* Item Detail Modal */}
+            {selectedItem && (
+              <ItemDetailCard
+                item={selectedItem}
+                comparisonItem={
+                  selectedItem.equippedSlot
+                    ? null
+                    : equipmentStore.getItemInSlot(selectedItem.slot) ?? null
+                }
+                onEquip={async () => {
+                  await equipmentStore.equipItem(char.id, selectedItem.id, selectedItem.slot);
+                  const updated = await fetchCharacter(char.id);
+                  if (updated) setChar(updated);
+                  setSelectedItem(null);
+                }}
+                onUnequip={async () => {
+                  if (selectedItem.equippedSlot) {
+                    await equipmentStore.unequipItem(char.id, selectedItem.equippedSlot);
+                    const updated = await fetchCharacter(char.id);
+                    if (updated) setChar(updated);
+                  }
+                  setSelectedItem(null);
+                }}
+                onSalvage={async () => {
+                  await equipmentStore.salvageItem(char.id, selectedItem.id);
+                  const updated = await fetchCharacter(char.id);
+                  if (updated) setChar(updated);
+                  setSelectedItem(null);
+                }}
+                onClose={() => setSelectedItem(null)}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </motion.div>
