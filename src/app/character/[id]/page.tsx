@@ -530,20 +530,6 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                   })()}
                 </GlassCard>
 
-                {/* Forge Link */}
-                <GlassCard>
-                  <SectionLabel label="Crafting" icon={Hammer} />
-                  <p className="text-text-muted text-xs mb-3">
-                    Visit The Forge to craft equipment, potions, traps, and more.
-                  </p>
-                  <Link
-                    href={`/character/${id}/forge`}
-                    className="flex items-center justify-center gap-2 w-full rounded-lg px-4 py-3 text-xs font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 border border-orange-500/20 hover:border-orange-500/30 transition-all"
-                  >
-                    <Hammer className="w-4 h-4" />
-                    Enter The Forge
-                  </Link>
-                </GlassCard>
               </div>
 
               {/* Right: Loot Chest (Stash) */}

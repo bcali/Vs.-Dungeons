@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { Plus, Swords } from "lucide-react";
+import { Plus, Swords, Hammer } from "lucide-react";
 import { fetchCampaign, fetchCharacters, createCharacter, deleteCharacter } from "@/lib/supabase/queries";
 import { maxHp, totalStat, xpForLevel } from "@/lib/game/stats";
 import type { Character, Campaign, Profession } from "@/types/game";
@@ -161,6 +161,15 @@ function HeroCard({ char, onDelete }: { char: Character; onDelete: () => void })
         boxShadow: `0 0 20px color-mix(in srgb, var(--${colorToken}) 10%, transparent)`,
       }}
     >
+      {/* Forge CTA */}
+      <Link
+        href={`/character/${char.id}/forge`}
+        className="flex items-center justify-center gap-2 w-full rounded-lg px-3 py-2 mb-4 text-[11px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/15 hover:border-orange-500/30 transition-all active:scale-[0.98]"
+      >
+        <Hammer className="w-3.5 h-3.5" />
+        The Forge
+      </Link>
+
       <div className="flex items-start gap-4 mb-4">
         <HeroAvatar profession={char.profession} level={char.level} size="md" />
         <div className="flex-1 min-w-0">
