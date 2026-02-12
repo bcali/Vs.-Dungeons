@@ -16,6 +16,12 @@ interface PreCombatHero {
   spellSlotsUsed: number;
 }
 
+interface PreCombatSetup {
+  encounterName: string;
+  participants: CombatParticipant[];
+  initiativeOrder: string[];
+}
+
 interface CombatState {
   combatId: string | null;
   encounterName: string;
@@ -26,9 +32,12 @@ interface CombatState {
   currentTurnIndex: number;
   actionLog: ActionLogEntry[];
   preCombatSnapshot: PreCombatHero[];
+  preCombatSetup: PreCombatSetup | null;
 
   // Actions
   initCombat: (encounterName: string, participants: CombatParticipant[], initiativeOrder: string[]) => void;
+  setPreCombatSetup: (setup: PreCombatSetup) => void;
+  startCombatFromShop: () => void;
   advanceTurn: () => void;
   applyDamage: (targetId: string, amount: number) => void;
   applyHealing: (targetId: string, amount: number) => void;
@@ -63,6 +72,18 @@ export const useCombatStore = create<CombatState>()(
       currentTurnIndex: 0,
       actionLog: [],
       preCombatSnapshot: [],
+      preCombatSetup: null,
+
+      setPreCombatSetup: (setup) => {
+        set({ preCombatSetup: setup });
+      },
+
+      startCombatFromShop: () => {
+        const { preCombatSetup, initCombat } = get();
+        if (!preCombatSetup) return;
+        initCombat(preCombatSetup.encounterName, preCombatSetup.participants, preCombatSetup.initiativeOrder);
+        set({ preCombatSetup: null });
+      },
 
       initCombat: (encounterName, participants, initiativeOrder) => {
         set({
@@ -263,6 +284,7 @@ export const useCombatStore = create<CombatState>()(
           currentTurnIndex: 0,
           actionLog: [],
           preCombatSnapshot: [],
+          preCombatSetup: null,
         });
       },
 
@@ -340,6 +362,7 @@ export const useCombatStore = create<CombatState>()(
         currentTurnIndex: state.currentTurnIndex,
         actionLog: state.actionLog,
         preCombatSnapshot: state.preCombatSnapshot,
+        preCombatSetup: state.preCombatSetup,
       }),
     }
   )

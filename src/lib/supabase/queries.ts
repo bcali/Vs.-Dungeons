@@ -1,7 +1,7 @@
 // Supabase data access layer — queries & mutations
 
 import { getSupabase } from './client';
-import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, SkillBranch, SkillType, CharacterSkillAllocation, ActionBarSlot, CatalogItem, CraftingProfession, Material, CharacterMaterial, Profession, MonsterCategory, DamageType, ItemType, CharacterEquipmentItem, EquipmentSlot, EquipmentRarity, SpecialEffect } from '@/types/game';
+import type { Character, Ability, Monster, Campaign, InventoryItem, CharacterSeals, Stats, SkillTreeSkill, SkillTreeClass, SkillBranch, SkillType, CharacterSkillAllocation, ActionBarSlot, CatalogItem, ShopItem, CraftingProfession, Material, CharacterMaterial, Profession, MonsterCategory, DamageType, ItemType, CharacterEquipmentItem, EquipmentSlot, EquipmentRarity, SpecialEffect } from '@/types/game';
 import type { GameConfig } from '@/types/config';
 import { maxHp } from '@/lib/game/stats';
 
@@ -830,4 +830,48 @@ export async function salvageEquipment(characterId: string, itemId: string): Pro
     });
   if (error) { logQueryError('salvageEquipment', error); return false; }
   return true;
+}
+
+// ─── Quest Shop ──────────────────────────────────────────────────────────
+
+export async function fetchShopItems(questName: string): Promise<ShopItem[]> {
+  const { data, error } = await getSupabase()
+    .from('quest_shop_items')
+    .select('*, item_catalog(*)')
+    .eq('quest_name', questName)
+    .order('sort_order');
+  if (error) { logQueryError('fetchShopItems', error); return []; }
+  if (!data) return [];
+  return data.map((row: DbRow) => {
+    const catalog = row.item_catalog as DbRow;
+    return {
+      id: row.id as string,
+      questName: row.quest_name as string,
+      catalogItemId: row.catalog_item_id as string,
+      price: row.price as number,
+      stock: row.stock as number,
+      sortOrder: row.sort_order as number,
+      name: catalog.name as string,
+      itemType: catalog.item_type as ItemType,
+      rarity: catalog.rarity as CatalogItem['rarity'],
+      description: (catalog.description as string) ?? null,
+      effectJson: (catalog.effect_json as Record<string, unknown>) ?? null,
+    };
+  });
+}
+
+export async function purchaseShopItem(
+  characterId: string,
+  shopItemId: string
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await getSupabase()
+    .rpc('purchase_shop_item', {
+      p_character_id: characterId,
+      p_shop_item_id: shopItemId,
+    });
+  if (error) {
+    logQueryError('purchaseShopItem', error);
+    return { success: false, error: error.message };
+  }
+  return { success: true };
 }

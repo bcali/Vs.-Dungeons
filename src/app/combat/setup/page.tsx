@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  Compass, Swords, Shield, Heart, Zap, Plus, X, Search, Footprints,
+  Compass, Swords, Shield, Heart, Zap, Plus, X, Search, Footprints, ShoppingBag,
 } from "lucide-react";
 import { fetchCampaign, fetchCharacters, fetchMonsters, fetchCharacterAbilities } from "@/lib/supabase/queries";
 import { maxHp, maxSpellSlots, totalStats, getMov } from "@/lib/game/stats";
@@ -54,7 +54,7 @@ const PROF_BORDER: Record<string, string> = {
 
 export default function EncounterSetupPage() {
   const router = useRouter();
-  const initCombat = useCombatStore((s) => s.initCombat);
+  const setPreCombatSetup = useCombatStore((s) => s.setPreCombatSetup);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [heroes, setHeroes] = useState<Character[]>([]);
@@ -186,8 +186,12 @@ export default function EncounterSetupPage() {
 
     participants.sort((a, b) => b.initiativeRoll - a.initiativeRoll);
     const initiativeOrder = participants.map((p) => p.id);
-    initCombat(encounterName || "Encounter", participants, initiativeOrder);
-    router.push("/combat");
+    setPreCombatSetup({
+      encounterName: encounterName || "Encounter",
+      participants,
+      initiativeOrder,
+    });
+    router.push("/combat/shop");
   };
 
   if (loading) {
@@ -224,8 +228,8 @@ export default function EncounterSetupPage() {
               disabled={totalEnemies === 0 || heroes.length === 0}
               className="bg-lego-green hover:bg-green-600 text-white font-black px-6 py-2.5 rounded-lg border-b-4 border-green-800 shadow-xl active:border-b-0 active:translate-y-0.5 transition-all flex items-center gap-2 uppercase tracking-wider disabled:opacity-40 disabled:pointer-events-none"
             >
-              <Swords className="w-4 h-4" />
-              Start Combat
+              <ShoppingBag className="w-4 h-4" />
+              Visit Merchant
             </motion.button>
           </div>
 
@@ -379,8 +383,8 @@ export default function EncounterSetupPage() {
             disabled={totalEnemies === 0 || heroes.length === 0}
             className="bg-lego-green hover:bg-green-600 text-white font-black text-xl px-8 py-4 rounded-lg border-b-6 border-green-800 shadow-xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 uppercase tracking-wider disabled:opacity-40 disabled:pointer-events-none"
           >
-            <Swords className="w-6 h-6" />
-            Roll Initiative &amp; Start Combat
+            <ShoppingBag className="w-6 h-6" />
+            Visit the Merchant
           </motion.button>
         </motion.div>
       </motion.div>

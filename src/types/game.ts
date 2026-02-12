@@ -192,6 +192,21 @@ export interface CatalogItem {
   effectJson: Record<string, unknown> | null;
 }
 
+export interface ShopItem {
+  id: string;
+  questName: string;
+  catalogItemId: string;
+  price: number;
+  stock: number;       // -1 = unlimited, 0 = sold out
+  sortOrder: number;
+  // Joined from item_catalog:
+  name: string;
+  itemType: ItemType;
+  rarity: CatalogItem['rarity'];
+  description: string | null;
+  effectJson: Record<string, unknown> | null;
+}
+
 // ─── Crafting Profession Ability Types ──────────────────────────────────
 
 export type CraftingProfession = 'blacksmithing' | 'alchemy' | 'cooking' | 'enchanting' | 'trap_making';
