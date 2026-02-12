@@ -4,10 +4,10 @@ import Link from "next/link";
 import { use, useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { BarChart3, Swords, Sparkles, Gem, Package, Hammer, Shield } from "lucide-react";
-import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials, fetchCharacterEquipment } from "@/lib/supabase/queries";
+import { fetchCharacter, updateCharacter, fetchCharacterAbilities, fetchInventory, fetchSeals, fetchCharacterMaterials } from "@/lib/supabase/queries";
 import { maxHp, maxSpellSlots, getMov, totalStats, totalStat, statBonus, xpForLevel, rankForLevel } from "@/lib/game/stats";
 import { STAT_KEYS, STAT_LABELS, PROFESSION_INFO, PROFESSION_CLASS } from "@/types/game";
-import type { Character, Ability, InventoryItem, CharacterSeals, CharacterMaterial, CharacterEquipmentItem, EquipmentSlot, CraftingProfession, StatKey } from "@/types/game";
+import type { Character, Ability, InventoryItem, CharacterSeals, CharacterMaterial, CharacterEquipmentItem, EquipmentSlot, StatKey } from "@/types/game";
 import { TIER_COLORS, CATEGORY_ICONS } from "@/types/game";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkillTreePanel } from "@/components/character/skill-tree-panel";
@@ -15,7 +15,6 @@ import { ProfessionTreePanel } from "@/components/character/profession-tree-pane
 import { EquipmentSlots } from "@/components/character/equipment-slots";
 import { EquipmentStash } from "@/components/character/equipment-stash";
 import { ItemDetailCard } from "@/components/character/item-detail-card";
-import { CraftEquipmentPanel } from "@/components/character/craft-equipment-panel";
 import { useEquipmentStore } from "@/stores/equipment-store";
 import { GameProgressBar } from "@/components/ui/game-progress-bar";
 import { PageShell, fadeUp } from "@/components/ui/page-shell";
@@ -71,7 +70,7 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CharacterEquipmentItem | null>(null);
-  const [isCrafting, setIsCrafting] = useState(false);
+
 
   const equipmentStore = useEquipmentStore();
 
@@ -531,33 +530,19 @@ export default function CharacterSheetPage({ params }: { params: Promise<{ id: s
                   })()}
                 </GlassCard>
 
-                {/* Crafting */}
+                {/* Forge Link */}
                 <GlassCard>
-                  <CraftEquipmentPanel
-                    characterLevel={char.level}
-                    craftingProfessions={['blacksmithing', 'enchanting'] as CraftingProfession[]}
-                    materials={materials}
-                    seals={seals}
-                    isCrafting={isCrafting}
-                    onCraft={async (recipe) => {
-                      setIsCrafting(true);
-                      const success = await equipmentStore.craftItem(
-                        char.id,
-                        recipe.template,
-                        char.level,
-                      );
-                      setIsCrafting(false);
-                      if (success) {
-                        // Reload seals/materials after crafting
-                        const [s, mats] = await Promise.all([
-                          fetchSeals(char.id),
-                          fetchCharacterMaterials(char.id),
-                        ]);
-                        setSeals(s);
-                        setMaterials(mats);
-                      }
-                    }}
-                  />
+                  <SectionLabel label="Crafting" icon={Hammer} />
+                  <p className="text-text-muted text-xs mb-3">
+                    Visit The Forge to craft equipment, potions, traps, and more.
+                  </p>
+                  <Link
+                    href={`/character/${id}/forge`}
+                    className="flex items-center justify-center gap-2 w-full rounded-lg px-4 py-3 text-xs font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 border border-orange-500/20 hover:border-orange-500/30 transition-all"
+                  >
+                    <Hammer className="w-4 h-4" />
+                    Enter The Forge
+                  </Link>
                 </GlassCard>
               </div>
 
