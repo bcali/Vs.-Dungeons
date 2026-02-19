@@ -48,9 +48,9 @@ export function validateCombatResponse(
       continue;
     }
 
-    // HP can't exceed max after healing
+    // HP can't exceed max after healing — warn only, store clamps to maxHp
     if (result.hpChange > 0 && p.currentHp + result.hpChange > p.maxHp) {
-      errors.push(`HP would exceed max for ${p.displayName}: ${p.currentHp + result.hpChange} > ${p.maxHp}`);
+      errors.push(`[warn] HP healing overcap for ${p.displayName}: ${p.currentHp + result.hpChange} > ${p.maxHp} (will be capped)`);
     }
 
     // Spell slots can't exceed max
@@ -58,9 +58,9 @@ export function validateCombatResponse(
       errors.push(`Spell slots would exceed max for ${p.displayName}`);
     }
 
-    // Sanity: single hit shouldn't do 50+ damage
+    // Sanity: high damage — warn only, legitimate with crits + abilities
     if (result.hpChange < -50) {
-      errors.push(`Suspiciously high damage: ${Math.abs(result.hpChange)} to ${p.displayName}`);
+      errors.push(`[warn] High damage: ${Math.abs(result.hpChange)} to ${p.displayName}`);
     }
   }
 

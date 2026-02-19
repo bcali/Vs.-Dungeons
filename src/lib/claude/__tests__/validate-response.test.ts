@@ -105,7 +105,7 @@ describe('validateCombatResponse', () => {
       ],
     });
     const errors = validateCombatResponse(response, defaultParticipants);
-    expect(errors).toContainEqual(expect.stringContaining('HP would exceed max'));
+    expect(errors).toContainEqual(expect.stringContaining('HP healing overcap'));
     expect(errors).toContainEqual(expect.stringContaining('Goblin'));
   });
 
@@ -174,7 +174,7 @@ describe('validateCombatResponse', () => {
       ],
     });
     const errors = validateCombatResponse(response, defaultParticipants);
-    expect(errors).toContainEqual(expect.stringContaining('Suspiciously high damage'));
+    expect(errors).toContainEqual(expect.stringContaining('High damage'));
     expect(errors).toContainEqual(expect.stringContaining('Goblin'));
   });
 
@@ -191,8 +191,8 @@ describe('validateCombatResponse', () => {
       ],
     });
     const errors = validateCombatResponse(response, defaultParticipants);
-    // -50 is NOT < -50, so no suspiciously high damage error
-    expect(errors.some(e => e.includes('Suspiciously high damage'))).toBe(false);
+    // -50 is NOT < -50, so no high damage warning
+    expect(errors.some(e => e.includes('High damage'))).toBe(false);
   });
 
   it('returns error for unknown participant in results', () => {
@@ -240,7 +240,7 @@ describe('validateCombatResponse', () => {
     expect(errors.length).toBeGreaterThanOrEqual(4);
     expect(errors.some(e => e.includes('Unknown actor'))).toBe(true);
     expect(errors.some(e => e.includes('Unknown target'))).toBe(true);
-    expect(errors.some(e => e.includes('Suspiciously high damage'))).toBe(true);
+    expect(errors.some(e => e.includes('High damage'))).toBe(true);
     expect(errors.some(e => e.includes('Spell slots would exceed max'))).toBe(true);
   });
 });

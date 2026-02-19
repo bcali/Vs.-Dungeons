@@ -1,6 +1,6 @@
 // Combat-specific types
 
-import type { Stats } from './game';
+import type { Stats, ItemType } from './game';
 
 export type ActionType = 'melee_attack' | 'ranged_attack' | 'ability' | 'item' | 'defend' | 'help' | 'move' | 'other';
 export type EffectCategory = 'buff' | 'debuff' | 'cc' | 'dot' | 'hot';
@@ -26,6 +26,14 @@ export interface MonsterSpecialAbility {
   isOneTime?: boolean;
 }
 
+export interface CombatInventoryItem {
+  id: string;
+  itemName: string;
+  itemType: ItemType;
+  quantity: number;
+  effectJson: Record<string, unknown> | null;
+}
+
 export interface CombatParticipant {
   id: string;
   displayName: string;
@@ -49,6 +57,8 @@ export interface CombatParticipant {
   abilities?: CombatAbility[];
   specialAbilities?: MonsterSpecialAbility[];
   usedAbilityNames?: string[];
+  inventory?: CombatInventoryItem[];
+  itemUsedThisTurn?: boolean;
 }
 
 export interface ActiveStatusEffect {
@@ -71,6 +81,7 @@ export interface ActionLogEntry {
   actorName: string;
   actionType: ActionType;
   abilityName?: string;
+  itemName?: string;
   targets: { id: string; name: string }[];
   roll?: number;
   targetNumber?: number;

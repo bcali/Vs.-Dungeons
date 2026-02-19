@@ -49,6 +49,9 @@ interface CombatState {
   setDefending: (participantId: string, defending: boolean) => void;
   markAbilityUsed: (participantId: string, abilityName: string) => void;
   useHeroSurge: (participantId: string) => void;
+  useItem: (participantId: string, itemName: string) => void;
+  resetItemUsedFlag: (participantId: string) => void;
+  restoreSpellSlotsPartial: (participantId: string, amount: number) => void;
   addLogEntry: (entry: Omit<ActionLogEntry, 'id' | 'timestamp'>) => void;
   getParticipant: (id: string) => CombatParticipant | undefined;
   abandonCombat: () => void;
@@ -103,8 +106,11 @@ export const useCombatStore = create<CombatState>()(
 
       advanceTurn: () => {
         const { currentTurnIndex, initiativeOrder, roundNumber } = get();
-        const nextIndex = currentTurnIndex + 1;
+        // Reset item used flag for the outgoing actor
+        const outgoingId = initiativeOrder[currentTurnIndex];
+        if (outgoingId) get().resetItemUsedFlag(outgoingId);
 
+        const nextIndex = currentTurnIndex + 1;
         if (nextIndex >= initiativeOrder.length) {
           set({ currentTurnIndex: 0, roundNumber: roundNumber + 1 });
         } else {
@@ -211,6 +217,39 @@ export const useCombatStore = create<CombatState>()(
           participants: state.participants.map(p => {
             if (p.id !== participantId) return p;
             return { ...p, heroSurgeAvailable: false };
+          }),
+        }));
+      },
+
+      useItem: (participantId, itemName) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId || !p.inventory) return p;
+            return {
+              ...p,
+              inventory: p.inventory.map(i =>
+                i.itemName === itemName ? { ...i, quantity: Math.max(0, i.quantity - 1) } : i
+              ),
+              itemUsedThisTurn: true,
+            };
+          }),
+        }));
+      },
+
+      resetItemUsedFlag: (participantId) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            return { ...p, itemUsedThisTurn: false };
+          }),
+        }));
+      },
+
+      restoreSpellSlotsPartial: (participantId, amount) => {
+        set(state => ({
+          participants: state.participants.map(p => {
+            if (p.id !== participantId) return p;
+            return { ...p, spellSlotsUsed: Math.max(0, p.spellSlotsUsed - amount) };
           }),
         }));
       },

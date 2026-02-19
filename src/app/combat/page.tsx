@@ -38,6 +38,8 @@ export default function CombatTrackerPage() {
   const [lastNarration, setLastNarration] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
+  // Tracks transcript synchronously so onerror/onEnd callbacks can read it
+  const transcriptRefCapture = useRef("");
 
   const currentActorId = initiativeOrder[currentTurnIndex];
   const currentActor = participants.find((p) => p.id === currentActorId);
@@ -50,108 +52,162 @@ export default function CombatTrackerPage() {
     setProcessing(true);
     setVoiceState('processing');
 
-    try {
-      const res = await fetch('/api/combat/action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(process.env.NEXT_PUBLIC_APP_KEY && { 'X-App-Key': process.env.NEXT_PUBLIC_APP_KEY }),
-        },
-        body: JSON.stringify({
-          transcript: text,
-          combatState: { roundNumber, participants, initiativeOrder, currentTurnIndex },
-        }),
-      });
-      const data: ClaudeResponse = await res.json();
+    const MAX_CLIENT_RETRIES = 1; // 1 retry = 2 total attempts
+    let succeeded = false;
 
-      if (isActionResponse(data)) {
-        // Apply results
-        for (const result of data.results) {
-          if (result.hpChange < 0) applyDamage(result.participantId, Math.abs(result.hpChange));
-          if (result.hpChange > 0) applyHealing(result.participantId, result.hpChange);
-          for (const effect of result.newEffects) {
-            applyStatusEffect(result.participantId, {
-              ...effect,
-              id: crypto.randomUUID(),
-              remainingTurns: (effect as unknown as { duration?: number | null }).duration ?? null,
-            } as ActiveStatusEffect);
-          }
-          for (const effectId of result.removedEffects) {
-            removeEffect(result.participantId, effectId);
-          }
-          // Apply spell slot cost
-          if (result.slotsUsed > 0) {
-            useSpellSlot(result.participantId, result.slotsUsed);
-          }
-        }
+    for (let clientAttempt = 0; clientAttempt <= MAX_CLIENT_RETRIES; clientAttempt++) {
+      try {
+        // 12s client timeout — stays above Vercel's 10s + network overhead
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-        // Apply top-level spell slot cost (if specified at action level)
-        if (data.slotsUsed && data.slotsUsed > 0) {
-          useSpellSlot(data.action.actorId, data.slotsUsed);
-        }
-
-        // Bug fix: set defending flag when action is defend
-        if (data.action.type === 'defend') {
-          setDefending(data.action.actorId, true);
-        }
-
-        // Track one-time ability usage for monsters
-        if (data.action.type === 'ability' && currentActor?.team === 'enemy') {
-          const specialUsed = currentActor.specialAbilities?.find(
-            sa => sa.name.toLowerCase() === data.action.name.toLowerCase() && sa.isOneTime
-          );
-          if (specialUsed) {
-            markAbilityUsed(currentActorId, specialUsed.name);
-          }
-        }
-
-        // Add log entry
-        const targets = data.action.targetIds.map((tid) => {
-          const p = participants.find((pp) => pp.id === tid);
-          return { id: tid, name: p?.displayName ?? 'Unknown' };
+        const res = await fetch('/api/combat/action', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(process.env.NEXT_PUBLIC_APP_KEY && { 'X-App-Key': process.env.NEXT_PUBLIC_APP_KEY }),
+          },
+          body: JSON.stringify({
+            transcript: text,
+            combatState: { roundNumber, participants, initiativeOrder, currentTurnIndex },
+          }),
+          signal: controller.signal,
         });
-        addLogEntry({
-          roundNumber,
-          actorId: data.action.actorId,
-          actorName: currentActor?.displayName ?? 'Unknown',
-          actionType: data.action.type,
-          abilityName: data.action.name,
-          targets,
-          roll: data.action.roll,
-          targetNumber: data.action.targetNumber,
-          success: data.action.hit,
-          damage: data.results.reduce((s, r) => s + Math.max(0, -r.hpChange), 0) || undefined,
-          healing: data.results.reduce((s, r) => s + Math.max(0, r.hpChange), 0) || undefined,
-          narration: data.narration,
-          narrationShort: data.narrationShort,
-          voiceTranscript: text,
-        });
+        clearTimeout(timeoutId);
 
-        setLastNarration(data.narration);
-        speakNarration(data.narration);
-        setVoiceState('resolved');
-
-        // Auto-advance turn
-        if (data.turnComplete) {
-          setTimeout(() => {
-            // Clear defending from current actor and prep next participant
-            setDefending(currentActorId, false);
-            const nextIdx = (currentTurnIndex + 1) % initiativeOrder.length;
-            const nextId = initiativeOrder[nextIdx];
-            setDefending(nextId, false);
-            tickParticipantEffects(nextId);
-            advanceTurn();
-          }, 2000);
+        // Always try to parse JSON
+        let data: ClaudeResponse;
+        try {
+          data = await res.json();
+        } catch {
+          if (clientAttempt < MAX_CLIENT_RETRIES) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+          }
+          setLastNarration("Connection issue. Check your Wi-Fi and try again.");
+          setVoiceState('error');
+          break;
         }
-      } else {
-        setLastNarration(data.clarificationNeeded);
-        setVoiceState('clarification');
+
+        if (!res.ok) {
+          // On 502 (server exhausted retries), try once more from client
+          if (res.status === 502 && clientAttempt < MAX_CLIENT_RETRIES) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+          }
+          if (res.status === 429) {
+            setLastNarration("Too many requests! Wait a few seconds and try again.");
+          } else {
+            const errData = data as { clarificationNeeded?: string; error?: string };
+            setLastNarration(errData.clarificationNeeded ?? errData.error ?? "Something went wrong. Try again.");
+          }
+          setVoiceState('clarification');
+          break;
+        }
+
+        if (isActionResponse(data)) {
+          // Apply results
+          for (const result of data.results) {
+            if (result.hpChange < 0) applyDamage(result.participantId, Math.abs(result.hpChange));
+            if (result.hpChange > 0) applyHealing(result.participantId, result.hpChange);
+            for (const effect of result.newEffects) {
+              applyStatusEffect(result.participantId, {
+                ...effect,
+                id: crypto.randomUUID(),
+                remainingTurns: (effect as unknown as { duration?: number | null }).duration ?? null,
+              } as ActiveStatusEffect);
+            }
+            for (const effectId of result.removedEffects) {
+              removeEffect(result.participantId, effectId);
+            }
+            if (result.slotsUsed > 0) {
+              useSpellSlot(result.participantId, result.slotsUsed);
+            }
+          }
+
+          // Apply top-level spell slot cost (if specified at action level)
+          if (data.slotsUsed && data.slotsUsed > 0) {
+            useSpellSlot(data.action.actorId, data.slotsUsed);
+          }
+
+          if (data.action.type === 'defend') {
+            setDefending(data.action.actorId, true);
+          }
+
+          // Track one-time ability usage for monsters
+          if (data.action.type === 'ability' && currentActor?.team === 'enemy') {
+            const specialUsed = currentActor.specialAbilities?.find(
+              sa => sa.name.toLowerCase() === data.action.name.toLowerCase() && sa.isOneTime
+            );
+            if (specialUsed) {
+              markAbilityUsed(currentActorId, specialUsed.name);
+            }
+          }
+
+          // Add log entry
+          const targets = data.action.targetIds.map((tid) => {
+            const p = participants.find((pp) => pp.id === tid);
+            return { id: tid, name: p?.displayName ?? 'Unknown' };
+          });
+          addLogEntry({
+            roundNumber,
+            actorId: data.action.actorId,
+            actorName: currentActor?.displayName ?? 'Unknown',
+            actionType: data.action.type,
+            abilityName: data.action.name,
+            targets,
+            roll: data.action.roll,
+            targetNumber: data.action.targetNumber,
+            success: data.action.hit,
+            damage: data.results.reduce((s, r) => s + Math.max(0, -r.hpChange), 0) || undefined,
+            healing: data.results.reduce((s, r) => s + Math.max(0, r.hpChange), 0) || undefined,
+            narration: data.narration,
+            narrationShort: data.narrationShort,
+            voiceTranscript: text,
+          });
+
+          setLastNarration(data.narration);
+          speakNarration(data.narration);
+          setVoiceState('resolved');
+          succeeded = true;
+
+          // Auto-advance turn with dynamic delay based on narration length
+          if (data.turnComplete) {
+            const advanceDelay = Math.max(1500, data.narration.length * 30);
+            setTimeout(() => {
+              setDefending(currentActorId, false);
+              const nextIdx = (currentTurnIndex + 1) % initiativeOrder.length;
+              const nextId = initiativeOrder[nextIdx];
+              setDefending(nextId, false);
+              tickParticipantEffects(nextId);
+              advanceTurn();
+            }, advanceDelay);
+          }
+        } else {
+          setLastNarration(data.clarificationNeeded);
+          setVoiceState('clarification');
+        }
+        break; // Success or clarification — exit retry loop
+
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          if (clientAttempt < MAX_CLIENT_RETRIES) continue;
+          setLastNarration("That took too long. Try saying it more simply.");
+          setVoiceState('error');
+        } else {
+          if (clientAttempt < MAX_CLIENT_RETRIES) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+          }
+          setLastNarration("Something went wrong. Try again or type the action.");
+          setVoiceState('error');
+        }
       }
-    } catch {
-      setLastNarration("Something went wrong. Try again or type the action.");
-      setVoiceState('error');
     }
 
+    if (!succeeded && !['clarification', 'error'].includes(voiceState)) {
+      setVoiceState('error');
+    }
     setProcessing(false);
     setTranscript("");
     setTypedInput("");
@@ -166,21 +222,32 @@ export default function CombatTrackerPage() {
     stopNarration();
     setVoiceState('listening');
     setTranscript("");
+    transcriptRefCapture.current = "";
 
     const recognition = createSpeechRecognition({
       continuous: false,
       interimResults: true,
       onResult: (text, isFinal) => {
+        transcriptRefCapture.current = text;
         setTranscript(text);
         if (isFinal) {
           setVoiceState('confirming');
         }
       },
       onError: () => {
-        setVoiceState('error');
+        // If we already captured speech, go to confirm instead of dropping it
+        if (transcriptRefCapture.current.trim()) {
+          setVoiceState('confirming');
+        } else {
+          setVoiceState('error');
+        }
       },
       onStart: () => {},
       onEnd: () => {
+        // If recognition ended without a final result but we have interim text, confirm it
+        if (transcriptRefCapture.current.trim()) {
+          setVoiceState(prev => prev === 'listening' ? 'confirming' : prev);
+        }
         if (recognitionRef.current) recognitionRef.current = null;
       },
     });

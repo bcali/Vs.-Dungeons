@@ -29,8 +29,8 @@ function rowToCharacter(row: DbRow): Character {
     rank: row.rank as string,
     xp: row.xp as number,
     gold: row.gold as number,
-    stats: { str: row.stat_str as number, spd: row.stat_spd as number, tgh: row.stat_tgh as number, smt: row.stat_smt as number },
-    gearBonus: { str: row.gear_bonus_str as number, spd: row.gear_bonus_spd as number, tgh: row.gear_bonus_tgh as number, smt: row.gear_bonus_smt as number },
+    stats: { str: (row.stat_str as number) ?? 0, spd: (row.stat_spd as number) ?? 0, tgh: (row.stat_tgh as number) ?? 0, smt: (row.stat_smt as number) ?? 0 },
+    gearBonus: { str: (row.gear_bonus_str as number) ?? 0, spd: (row.gear_bonus_spd as number) ?? 0, tgh: (row.gear_bonus_tgh as number) ?? 0, smt: (row.gear_bonus_smt as number) ?? 0 },
     unspentStatPoints: row.unspent_stat_points as number,
     currentHp: (row.current_hp as number) ?? null,
     spellSlotsUsed: (row.spell_slots_used as number) ?? 0,
@@ -48,7 +48,7 @@ function rowToMonster(row: DbRow): Monster {
     level: row.level as number,
     isBoss: row.is_boss as boolean,
     category: (row.category as MonsterCategory) ?? null,
-    stats: { str: row.stat_str as number, spd: row.stat_spd as number, tgh: row.stat_tgh as number, smt: row.stat_smt as number },
+    stats: { str: (row.stat_str as number) ?? 0, spd: (row.stat_spd as number) ?? 0, tgh: (row.stat_tgh as number) ?? 0, smt: (row.stat_smt as number) ?? 0 },
     hp: row.hp as number,
     damage: row.damage as number,
     damageType: row.damage_type as DamageType,
@@ -571,6 +571,19 @@ export async function addInventoryItem(
     });
   if (error) { logQueryError('addInventoryItem', error); return null; }
   return data;
+}
+
+export async function consumeInventoryItem(
+  characterId: string,
+  itemName: string
+): Promise<number | null> {
+  const { data, error } = await getSupabase()
+    .rpc('consume_inventory_item', {
+      p_character_id: characterId,
+      p_item_name: itemName,
+    });
+  if (error) { logQueryError('consumeInventoryItem', error); return null; }
+  return data as number;
 }
 
 export async function incrementXp(characterId: string, amount: number): Promise<number | null> {

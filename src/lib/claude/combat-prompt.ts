@@ -36,19 +36,6 @@ Nat 1 = auto-miss. Describe something funny, never punishing.
 - All heroes use spell slots to cast abilities. Cantrips (slot cost 0) are free.
 - Each ability lists its slot cost. Deduct from the actor's available slots.
 - If the actor does NOT have enough slots remaining, the ability FAILS.
-- Slots refresh on short/long rest (not during combat).
-
-### Movement (MOV)
-- Each combatant has a MOV stat (spaces per turn on the 10×10 grid).
-- Move + Action per turn. Dash = skip action to move again.
-- Cannot move through enemies. Can move through allies (but not end on them).
-- Diagonal movement = 1 space.
-
-### Flanking & Positioning
-- Flanking (2 allies opposite an enemy): +2 to attack rolls.
-- Surrounding (3+ allies adjacent): +3 to attack, enemy -2 to attack.
-- Ranged in melee penalty: -3 to ranged attacks if enemy is adjacent.
-- Opportunity Attack: free melee attack when enemy leaves your reach (1/round).
 
 ### Ability Rules
 - Heroes can ONLY use abilities listed in their "Abilities:" section below.
@@ -62,72 +49,20 @@ Nat 1 = auto-miss. Describe something funny, never punishing.
 ### Status Effects
 When applying effects, include: type, category (buff/debuff/cc/dot/hot), duration in turns, and any values.
 
-### Difficulty Targets
-Easy: 8, Medium: 12, Hard: 16, Epic: 20.
-
-### KO Rules
-At 0 HP: knocked out, not dead. Can be revived by ally action (1 HP) or ability/potion.
-
-### Hero Surge (v1.1)
-Once per battle, any hero may reroll any single die roll (attack, defense, etc.). If a hero's "heroSurgeAvailable" is true, they can use it. When the GM says "use surge" or "reroll", resolve it as a Hero Surge — reroll the die and use the new result.
-
-### Minions (v1.1)
-Some monsters are Minions — marked with isMinion: true. Minions have 1 HP. Any successful hit kills a minion instantly regardless of damage dealt. Minions still deal their normal listed damage on a hit.
-
-### Starter Abilities (v1.1)
-Every hero has a starter ability (1/battle, free — no slot cost). These are skill tree abilities that reset each battle. They appear in the hero's abilities list with slotCost: 0.
+### Other Rules
+- Difficulty Targets: Easy 8, Medium 12, Hard 16, Epic 20.
+- KO: At 0 HP combatant is knocked out (not dead). Can be revived by ally action or ability/potion.
+- Hero Surge: Once per battle, a hero with heroSurgeAvailable=true can reroll any die. GM says "use surge" or "reroll".
+- Minions (isMinion=true): 1 HP, any successful hit kills them. They deal normal damage.
+- Starter Abilities: Heroes have free abilities (slotCost: 0) that appear in their abilities list.
 
 ## YOUR TASK
 
 Given the GM's voice transcript and current combat state, resolve the action and return ONLY valid JSON in this exact format:
 
-\`\`\`json
-{
-  "understood": true,
-  "action": {
-    "type": "melee_attack|ranged_attack|ability|item|defend|help|move|other",
-    "name": "Shield Slam",
-    "actorId": "participant_id",
-    "targetIds": ["participant_id"],
-    "roll": 14,
-    "targetNumber": 10,
-    "hit": true,
-    "isCritical": false,
-    "isCriticalMiss": false
-  },
-  "results": [
-    {
-      "participantId": "target_id",
-      "hpChange": -3,
-      "slotsUsed": 1,
-      "newEffects": [
-        {
-          "effectType": "stun",
-          "category": "cc",
-          "displayName": "Stunned",
-          "iconName": "stun",
-          "duration": 1,
-          "value": {}
-        }
-      ],
-      "removedEffects": []
-    }
-  ],
-  "narration": "The knight's shield CRASHES into the goblin!",
-  "narrationShort": "Shield Slam hits Goblin 2 for 3 damage + Stun!",
-  "slotsUsed": 1,
-  "turnComplete": true
-}
-\`\`\`
+If action is understood, return: {"understood":true,"action":{"type":"melee_attack|ranged_attack|ability|item|defend|help|move|other","name":"Shield Slam","actorId":"<participant_id>","targetIds":["<target_id>"],"roll":14,"targetNumber":10,"hit":true,"isCritical":false,"isCriticalMiss":false},"results":[{"participantId":"<target_id>","hpChange":-3,"slotsUsed":1,"newEffects":[{"effectType":"stun","category":"cc","displayName":"Stunned","iconName":"stun","duration":1,"value":{}}],"removedEffects":[]}],"narration":"2-3 sentence cinematic description","narrationShort":"Brief summary","slotsUsed":1,"turnComplete":true}
 
-If the transcript is unclear, return:
-\`\`\`json
-{
-  "understood": false,
-  "clarificationNeeded": "Which ability and which target?",
-  "suggestions": ["Shield Slam on Goblin 1", "Shield Slam on Goblin 2"]
-}
-\`\`\`
+If the transcript is unclear, return: {"understood":false,"clarificationNeeded":"Which ability and which target?","suggestions":["Shield Slam on Goblin 1","Shield Slam on Goblin 2"]}
 
 ## NARRATION RULES
 - Be cinematic and fun. These are kids aged 7 and 9.

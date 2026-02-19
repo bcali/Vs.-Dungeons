@@ -15,19 +15,19 @@ export const CombatActionRequestSchema = z.object({
       currentHp: z.number().int(),
       maxHp: z.number().int().positive(),
       stats: z.object({
-        str: z.number().int(), spd: z.number().int(),
-        tgh: z.number().int(), smt: z.number().int(),
-      }),
+        str: z.number().int().default(0), spd: z.number().int().default(0),
+        tgh: z.number().int().default(0), smt: z.number().int().default(0),
+      }).passthrough(),
       spellSlotsMax: z.number().int(),
       spellSlotsUsed: z.number().int(),
       mov: z.number().int(),
       isActive: z.boolean(),
       isDefending: z.boolean().optional(),
       statusEffects: z.array(z.any()).optional(),
-    })),
+    }).passthrough()),
     initiativeOrder: z.array(z.string()),
     currentTurnIndex: z.number().int().min(0),
-  }),
+  }).passthrough(),
 });
 
 // --- Response validation (validates Claude's output before applying to state) ---
